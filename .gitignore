@@ -1,0 +1,13 @@
+# created by virtualenv automatically
+bin/
+lib/
+lib64/
+
+__pycache__/
+
+*.cfg
+db.*
+*.log
+
+/site_static/
+!/site_static.gitkeep
