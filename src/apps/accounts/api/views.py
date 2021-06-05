@@ -36,7 +36,6 @@ class UserListContentView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
-        print(kwargs)
         user = generics.get_object_or_404(User, username=kwargs['username'])
         if not request.user != user.username:
             self.queryset = user.scenarios.published.all()

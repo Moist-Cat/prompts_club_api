@@ -1,6 +1,12 @@
 from rest_framework import serializers
 from ..models import Scenario, WorldInfo, Rating, \
                       Comment
+from taggit.models import Tag
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
 
 class WorldInfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,7 +26,7 @@ class BaseScenarioSerializer(serializers.ModelSerializer):
                   'updated', 'status']
 
 class ScenarioSerializer(serializers.ModelSerializer):
-    worldinfo_set = WorldInfoSerializer(many=True, read_only=False)
+    worldinfo_set = WorldInfoSerializer(many=True, read_only=True)
     rating_set = RatingSerializer(many=True, read_only=True)
 
     class Meta:

@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.utils.text import slugify
-from django.contrib.contenttypes.fields import GenericForeignKey
+#from django.contrib.contenttypes.fields import GenericOneToOne
 
 from taggit.managers import TaggableManager
 
@@ -20,17 +20,15 @@ class Scenario(models.Model):
 
     author = models.ForeignKey(User,
                                related_name='scenarios',
-                               on_delete=models.CASCADE,
-                               null=True)
+                               on_delete=models.CASCADE)
 
-    title = models.CharField(max_length=70, unique=True, blank=False)
-    slug = models.SlugField()
-    tags = TaggableManager()
+    title = models.CharField(max_length=70, unique=True)
+    slug = models.SlugField(unique=True)
 
-    description = models.TextField(max_length=400)
-    prompt = models.TextField(max_length=2000, blank=False)
-    memory = models.TextField(max_length=1000)
-    authors_note = models.CharField(max_length=140)
+    description = models.TextField(max_length=400, blank=True)
+    prompt = models.TextField(max_length=2000)
+    memory = models.TextField(max_length=1000, blank=True)
+    authors_note = models.CharField(max_length=140, blank=True)
     nsfw = models.BooleanField(default=False)
 
     publish = models.DateTimeField(default=timezone.now)
@@ -43,6 +41,7 @@ class Scenario(models.Model):
 
     objects = models.Manager() # default manager
     published = PublishedManager() # custom manager
+    tags = TaggableManager()
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -76,19 +75,23 @@ class BaseModel(models.Model):
         return self.scenario.title
 
 class Rating(BaseModel):
-    RELATED_NAME = 'ratings'
+    RELATED_NAME = 'rating'
     RATING_CHOICES = (
         (1, 1), (2, 2),
         (3, 3), (4, 4),
         (5, 5)
     )
-    user = models.OneToOneField(User,
+    user = models.ForeignKey(User,
                                 on_delete=models.DO_NOTHING,
                                 related_name='ratings')
+
     value = models.IntegerField(choices=RATING_CHOICES)
     
     def __str__(self):
         return f'{self.user} rated {self.scenario}: {self.value}'
+
+    class Meta:
+        unique_together = [['scenario', 'user']]
 
 class WorldInfo(BaseModel):
     RELATED_NAME = 'world_info'
