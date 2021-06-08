@@ -5,16 +5,22 @@ from django.contrib.auth.models import User
 from apps.scenario.models import Scenario
 
 class Folder(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+    )
     user = models.ForeignKey(User,
                              related_name='folders',
                              on_delete=models.CASCADE)
     scenarios = models.ManyToManyField(Scenario,
-                                    blank=True,
                                     related_name='folder')
 
     slug = models.SlugField()
     name = models.CharField(max_length=70)
-    description = models.TextField(max_length=400)
+    description = models.TextField(max_length=400, blank=True)
+    status = models.CharField(max_length=10,
+                                choices=STATUS_CHOICES,
+                                default='draft')
     
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -31,6 +37,5 @@ class Folder(models.Model):
 Folder.add_to_class('parent',
                         models.ForeignKey(Folder,
                         null=True,
-                        blank=True,
                         related_name='folders',
                         on_delete=models.CASCADE))

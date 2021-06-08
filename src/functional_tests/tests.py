@@ -20,41 +20,34 @@ class TestScenarios(unittest.TestCase):
                                 data=credentials).json()['token']
     # --- requests ---
     def create_object(self, obj_url, data):
-        return self.session.post(f'{URL}{obj_url}/create/', data=data)
+        return self.session.post(f'{URL}{obj_url}/make/', data=data)
 
     def edit_object(self, obj_url, data):
         return self.session.put(f'{URL}{obj_url}/edit/', data=data)
 
     def get_object(self, obj_url):
-        return self.session.get(f'{URL}{obj_url}/')
+        return self.session.get(f'{URL}{obj_url}')
 
     def delete_object(self, obj_url):
         return self.session.delete(f'{URL}{obj_url}/delete/')
 
     # --- other helpers ---
     def get_id_for_related_field(self, data, name):
-        self.create_object(f'scenario/{name}', data)
-        target_scenario = self.get_object('scenario/'
-                                         f'{self.title_slug}')
-        print(target_scenario.json())
-        try:
-            pk = target_scenario.json()[f'{name}'][0]['id']
-        except KeyError:
-            pk = target_scenario.json()[f'{name}_set'][0]['id']
+        target_object = self.create_object(f'scenario/{name}', data)
+        pk = target_object.json()['id']
         return pk
 
 
     # --- initializer ---
     def setUp(self):
-        self.user = {'username':'dummy', 'password':'toocommon123'}
         self.session = Session()
+        self.user = {'username':'dummy', 'password':'toocommon123'}
         self.user_token = self.create_user(self.user)
         self.user_id = self.get_object(f'account/{self.user["username"]}').json()['id']
         
         self.session.headers['Authorization'] = f'Token {self.user_token}'
-        self.session.headers['Content-Type']: "application/json"
         self.test_scenario = {
-                             'author': self.user_id,
+                             'user': self.user_id,
                              'title': 'Dumy Scenario',
                              'description': 'A test scenario',
                              'memory': 'You are testing an scenario',
@@ -91,9 +84,13 @@ class TestScenarios(unittest.TestCase):
                            'scenario': self.scenario_id
                            }
         ]
-        self.tag = {
+        self.tag = [{
                     'name': 'WP'
-        }
+                    },
+                    {
+                    'name': 'PW'
+                    }
+       ]
 
     # --- destroya ---
     def tearDown(self):
@@ -107,7 +104,8 @@ class TestScenarios(unittest.TestCase):
     # --- assertion helpers ---
     def assertCreate(self, obj_url, data):
         try:
-            res = self.create_object(obj_url, data)
+            res = self.create_object(f'scenario/{obj_url}', data)
+
             self.assertEqual(res.status_code, 201)
 
             for key, value in data.items():
@@ -120,10 +118,6 @@ class TestScenarios(unittest.TestCase):
             # a.k.a: it is a list, meaning is not an scenario
             for value in data:
                 self.assertCreate(obj_url, value)
-        else:
-            # we make sure that the WIs and such are pointing
-            # to the correct scenario
-            self.scenario_id = res.json()['id']
 
     def assertEdit(self, obj_url, data, field):
         try:
@@ -148,16 +142,17 @@ class TestScenarios(unittest.TestCase):
 
     def assertGet(self, obj_url, data):
         try:
-            res = self.get_object(obj_url)
+            res = self.get_object(f'scenario/{obj_url}')
             self.assertEqual(res.status_code, 200)
+            results = res.json()['results']
             try:
                 for key, value in data.items():
-                    self.assertIn(key, res.json().keys())
-                    self.assertIn(value, res.json().values())
+                    self.assertIn(key, results.keys())
+                    self.assertIn(value, results.values())
             except AttributeError as e:
                 for key, value in data.items():
-                    self.assertIn(key, res.json()[0].keys())
-                    self.assertIn(value, res.json()[0].values())
+                    self.assertIn(key, results[0].keys())
+                    self.assertIn(value, results[0].values())
         except AssertionError as e:
             print(res.content)
             raise e
@@ -168,11 +163,11 @@ class TestScenarios(unittest.TestCase):
         self.assertEdit(f'{self.title_slug}',self.test_scenario, 'title')
 
     def testShowsPrivateContent(self):
-        self.assertGet('scenario/mine', self.test_scenario)
+        self.assertGet('mine', self.test_scenario)
 
     def testPrivateScenarioIsHidden(self):
         try:
-            self.assertGet('scenario', self.test_scenario)
+            self.assertGet('', self.test_scenario)
         except (IndexError, AssertionError):
             # meaning there is nothing there
             # or at least not the scenario
@@ -183,7 +178,7 @@ class TestScenarios(unittest.TestCase):
 
     # WI tests
     def testCreateWI(self):
-        self.assertCreate('scenario/worldinfo', self.world_info)
+        self.assertCreate('worldinfo', self.world_info)
 
     def testEditWI(self):
         world_info = self.world_info[0]
@@ -201,10 +196,9 @@ class TestScenarios(unittest.TestCase):
     def testCreateRatings(self):
         # notice how it should fail the second time
         # since we allow only one rating per user
-        self.assertCreate('scenario/rating', self.ratings[0])
+        self.assertCreate(f'rating', self.ratings[0])
         try:
-            self.assertCreate('scenario/rating',
-                                            self.ratings[1]),
+            self.assertCreate(f'rating', self.ratings[1])
         except AssertionError:
             pass
         else:
@@ -216,21 +210,51 @@ class TestScenarios(unittest.TestCase):
         id = self.get_id_for_related_field(rating, 'rating')
 
         self.assertEdit(f'rating/{id}', rating, 'value')
-        
 
     def testDeleteRating(self):
         rating = self.ratings[0]
         id = self.get_id_for_related_field(rating, 'rating')
 
         self.assertDelete(f'rating/{id}')
-    
+
+    # Tag tests
     def testCreateTag(self):
-        self.assertCreate(f'scenario/{self.title_slug}/tag', self.tag)
-        
+        self.assertCreate(f'{self.title_slug}/tag', self.tag)
+    
+    def testDeleteTag(self):
+        tag_data = self.tag[0]
+        tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
+        # luckily, we get the slug outright, so no 
+        # need to slugify afterwards
+        tag_id = tag.json()['id']
+        self.assertDelete(f'{self.title_slug}/tag/{tag_id}')
+
+    def testScenarioHiddenFilterByTags(self):
+        tag_data = self.tag[0]
+        tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
+        tag_slug = tag.json()['slug']
+        try:
+            self.assertGet(f'tag/{tag_slug}', tag_data)
+        except (IndexError, AssertionError):
+            pass
+        else:
+            raise Exception('Private scenario tags show up in public list')
+
+    def testTagList(self):
+        tag_data = self.tag[0]
+        tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
+        tag_slug = tag.json()['slug']
+
+        self.assertGet(f'{self.title_slug}/tag', tag_data)
+
+    def testScenarioTags(self):
+        tag_data = self.tag[0]
+        tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
+        self.assertGet(f'{self.title_slug}/tag', tag_data)
 
     # Folder tests
     def testCreateFolder(self):
         pass
     # Comment tests
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(warnings=False)

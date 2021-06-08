@@ -5,42 +5,32 @@ from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework import generics
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from taggit.models import Tag
 
 from ..models import Scenario, Comment, WorldInfo, \
                      Rating
-from .serializers import ScenarioSerializer, \
-                                CommentSerializer, BaseScenarioSerializer, \
+from .permissions import CanReadObject, IsAuthor
+from .serializers import ScenarioSerializer, CommentSerializer, \
                                 WorldInfoSerializer, RatingSerializer, \
                                 TagSerializer
 
-UNALOWED_MESSAGE_ERROR = {'err_message': 'Uh, oh... Something went wrong. Want to try again?'}
-NOT_FOUND_MESSAGE_ERROR = {'err_message': "Here is not the data you are looking for. "
-                                             "Or... it is? Who kwnows, ha ha haaa!"}
+#permission_classes = [AllowAny]
 
 # ---scenario views---
 class ScenarioCreateView(generics.CreateAPIView):
     queryset = Scenario.objects.all()
-    serializer_class = BaseScenarioSerializer
+    serializer_class = ScenarioSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, request.user.pk)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer, user_pk):
-        author = get_object_or_404(User, pk=user_pk)
-        serializer.save(author=author)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
+    def perform_create(self, serializer):
+        user = get_object_or_404(User, username=self.request.user)
+        serializer.save(user=user)
 
 class ScenarioPublicListView(generics.ListAPIView):
     queryset = Scenario.published.all()
@@ -50,14 +40,9 @@ class ScenarioPublicListView(generics.ListAPIView):
 class ScenarioPrivateListView(generics.ListAPIView):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
-    
+
     def get_queryset(self):
-        assert self.queryset is not None, (
-            "'%s' should either include a `queryset` attribute, "
-            "or override the `get_queryset()` method."
-            % self.__class__.__name__
-        )
-        queryset = self.queryset.filter(author=self.request.user.id)
+        queryset = self.queryset.filter(user=self.request.user.id)
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -66,35 +51,14 @@ class ScenarioPrivateListView(generics.ListAPIView):
 class ScenarioDetailView(generics.RetrieveAPIView):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
-    permission_classes = [AllowAny]
     lookup_field = 'slug'
-
-    def get_object(self):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        # Perform the lookup filtering.
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        assert lookup_url_kwarg in self.kwargs, (
-            'Expected view %s to be called with a URL keyword argument '
-            'named "%s". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.' %
-            (self.__class__.__name__, lookup_url_kwarg)
-        )
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-        obj = get_object_or_404(queryset, **filter_kwargs)
-        if obj.status == 'published' or \
-                self.request.user == obj.author:
-            # May raise a permission denied
-            self.check_object_permissions(self.request, obj)
-
-            return obj
+    permission_classes = [CanReadObject, AllowAny]
 
 class ScenarioEditView(generics.UpdateAPIView):
     queryset = Scenario.objects.all()
-    serializer_class = BaseScenarioSerializer
+    serializer_class = ScenarioSerializer
     lookup_field = 'slug'
-
+    permission_classes = [IsAuthenticated, IsAuthor]
     def perform_update(self, serializer):
         # check if the scenario was published to 
         # perform the according changes
@@ -103,175 +67,209 @@ class ScenarioEditView(generics.UpdateAPIView):
             serializer.save(publish=timezone.now())
         serializer.save()
 
-    def put(self, request, *args, **kwargs):
-        """
-        We do 3 checks here.
-        1: User is posting the author or 
-           the scenario. I would add it sinamically
-           but since it is an ImmutableDict, I can not
-           do so.
-        2: User is not trying to change the author of 
-           the scenario to impersonate someone else.
-           Notice how the JSON is a string so we have 
-           to change it\'s type.
-        3: Who is editing the scenario is the author.
-        """
-        if request.data['author'] and \
-               int(request.data['author']) == \
-                   self.get_object().author.pk and \
-               request.user == self.get_object().author:
-            return self.update(request, *args, **kwargs)
-        return Response(UNALOWED_MESSAGE_ERROR, status=403)
-
 class ScenarioDeleteView(generics.DestroyAPIView):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
     lookup_field = 'slug'
+    permission_classes = [IsAuthenticated, IsAuthor]
 
-    def delete(self, request, *args, **kwargs):
-        if request.user == self.get_object().author:
-            return self.destroy(request, *args, **kwargs)
-        else:
-           return Response(UNALOWED_MESSAGE_ERROR, status=403)
-
-# --- wi views ---
-class WorldInfoCreateView(generics.CreateAPIView):
+class ScenarioWIListView(generics.ListAPIView):
     queryset = Scenario.objects.all()
     serializer_class = WorldInfoSerializer
-
-    def post(self, request, *args, **kwargs):
-        # notice here that we will 404 if the user
-        # tries to make WI for an unexistent scenario
-        scenario = get_object_or_404(Scenario, id=request.data['scenario'])
-        if request.user == scenario.author:
-            return self.create(request, *args, **kwargs)
-        return Response(UNALOWED_MESSAGE_ERROR, status=403)
-
-class WorldInfoEditView(generics.UpdateAPIView):
-    queryset = WorldInfo.objects.all()
-    serializer_class = WorldInfoSerializer
-
-    def put(self, request, *args, **kwargs):
-        if 'scenario' in request.data:
-            scenario = get_object_or_404(Scenario, id=request.data['scenario'])
-            if request.user == scenario.author:
-                return self.update(request, *args, **kwargs)
-        return Response(status=400)
-
-class WorldInfoDeleteView(generics.DestroyAPIView):
-    queryset = WorldInfo.objects.all()
-    serializer_class = WorldInfoSerializer
-
-    def delete(self, request, *args, **kwargs):
-        world_info = get_object_or_404(WorldInfo, pk=kwargs['pk'])
-        if request.user == world_info.scenario.author:
-            return self.destroy(request, *args, **kwargs)
-        return Response(status=400)
-
-# --- rating views ---
-class RatingCreateView(generics.CreateAPIView):
-    queryset = Rating.objects.all()
-    serializer_class = RatingSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, request.user.pk)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer, user_pk):
-        author = get_object_or_404(User, pk=user_pk)
-        serializer.save(user=author)
-
-    def post(self, request, *args, **kwargs):
-        # same process than the WI creation
-        scenario = get_object_or_404(Scenario, id=request.data['scenario'])
-        if request.user == scenario.author:
-            return self.create(request, *args, **kwargs)
-        return Response(UNALOWED_MESSAGE_ERROR, status=403)
-
-class RatingEditView(generics.UpdateAPIView):
-    queryset = Rating.objects.all()
-    serializer_class = RatingSerializer
-
-    def put(self, request, *args, **kwargs):
-        if 'scenario' in request.data:
-            scenario = get_object_or_404(Scenario, id=request.data['scenario'])
-            if request.user == scenario.author:
-                return self.update(request, *args, **kwargs)
-        return Response(status=400)
-
-class RatingDeleteView(generics.DestroyAPIView):
-    queryset = Rating.objects.all()
-    serializer_class = RatingSerializer
-
-    def delete(self, request, *args, **kwargs):
-        rating = get_object_or_404(Rating, pk=kwargs['pk'])
-        if request.user == rating.scenario.author:
-            return self.destroy(request, *args, **kwargs)
-        return Response(status=400)
-# tag views
-class ScenarioTagView(generics.ListAPIView):
-    queryset = Scenario.published.all()
-    serializer_class = TagSerializer
-    lookup_field = 'slug'
-
-    def get_object(self):
-        queryset = self.filter_queryset(self.queryset)
-
-        # Perform the lookup filtering.
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-        obj = get_object_or_404(queryset, **filter_kwargs)
-    
-        if obj.status == 'published' or \
-                self.request.user == obj.author:
-            # May raise a permission denied
-            self.check_object_permissions(self.request, obj)
-
-            return obj
-        # notice how we return an empty
-        # (even if serialized) response
-        # if the user requests aother user
-        # unpublished content
+    permission_classes = [CanReadObject, AllowAny]
 
     def get_queryset(self):
+        scenario = self.queryset.get(slug=self.kwargs['slug'])
+        self.check_object_permissions(self.request, scenario)
+        queryset = scenario.worldinfo_set.all()
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+class ScenarioRatingListView(generics.ListAPIView):
+    queryset = Scenario.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [CanReadObject, AllowAny] 
+    
+    def get_queryset(self):
+        scenario = self.queryset.get(slug=self.kwargs['slug'])
+        self.check_object_permissions(self.request, scenario)
+        queryset = scenario.rating_set.all()
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+class ScenarioCommentListView(generics.ListAPIView):
+    queryset = Scenario.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [CanReadObject, AllowAny] 
+    
+    def get_queryset(self):
+        scenario = self.queryset.get(slug=self.kwargs['slug'])
+        self.check_object_permissions(self.request, scenario)
+        queryset = scenario.comment_set.all()
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+    
+class ScenarioPrivateFilteredByTag(generics.ListAPIView):
+    queryset = Scenario.objects.all()
+    serializer_class = ScenarioSerializer
+    lookup_field = 'slug'
+    
+    def get_queryset(self):
+        tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
+        print(tag)
+        queryset = self.queryset.filter(tags__in=[tag],
+                                        user=self.request.user)
+        print(queryset)
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+class ScenarioTagListView(generics.ListAPIView):
+    queryset = Scenario.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [CanReadObject, IsAuthenticated]
+    lookup_field = 'slug'
+    
+    def get_queryset(self):
+        scenario = self.queryset.get(slug=self.kwargs['slug'])
+        self.check_object_permissions(self.request, scenario)
+        queryset = scenario.tags.all()
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+class ScenarioPublicFilteredByTag(generics.ListAPIView):
+    queryset = Scenario.published.all()
+    serializer_class = ScenarioSerializer
+    lookup_field = 'slug'
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
+        queryset = self.queryset.filter(tags__in=[tag])
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+# tag views
+"""
+I have to acces through the scenario 
+tag manager, since I can not save it 
+without checking the permissions 
+
+This:
+    serializer.validated_data['scenario']
+
+Can not be done since the scenario id is 
+not posted with the tag unlike the other models.
+We will use the slug to get both the scenario and the tags to 
+validate and filter the data.
+I hope it is not too confusing...
+And I (of course) have to return the data manually.
+"""
+class TagDeleteView(generics.GenericAPIView):
+    queryset = Scenario.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated, IsAuthor]
+    lookup_field = 'slug'
+
+    @action(detail=True,
+            methods=['delete'])
+    def delete(self, request, *args, **kwargs):
         scenario = self.get_object()
-        if scenario:
-            queryset = scenario.tags.all()
-            if isinstance(queryset, QuerySet):
-                # Ensure queryset is re-evaluated on each request.
-                queryset = queryset.all()
-            return queryset
+        tag_id = kwargs['pk']
+        tag = scenario.tags.get(pk=tag_id)
+        tag.delete()
+        return Response(status=204)
 
 class TagCreateView(generics.CreateAPIView):
     queryset = Scenario.objects.all()
     serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated, IsAuthor]
     lookup_field = 'slug'
-    permission_classes = [AllowAny]
 
-    def get_object(self):
-        queryset = self.filter_queryset(self.queryset)
-
-        # Perform the lookup filtering.
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-#                         'author': self.request.user.pk}
-        obj = get_object_or_404(queryset, **filter_kwargs)
-
-
-        # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
-        
-        return obj
-
-    def post(self, request, *args, **kwargs):
-        scenario = self.get_object()
+    def create(self, request, *args, **kwargs):
         if 'name' in request.data:
+            scenario = self.get_object()
             tag_name = request.data['name']
             scenario.tags.add(request.data['name'])
-            return Response(status=201)
+            new_tag = scenario.tags.get(name=tag_name)
+            response_json = {'id': new_tag.id, 'slug': new_tag.slug,
+                         'name': new_tag.name}
+            return Response(response_json, status=201)
         return Response(status=400)
+
+# --- wi views ---
+class WorldInfoViewSet(viewsets.ModelViewSet):
+    queryset = WorldInfo.objects.all()
+    serializer_class = WorldInfoSerializer
+    permission_classes=[IsAuthenticated, IsAuthor]
+
+    def perform_create(self, serializer):
+        scenario = serializer.validated_data['scenario']
+        self.check_object_permissions(self.request, scenario)
+        serializer.save()
+
+    @action(detail=True,
+            methods=['put'])
+    def edit(self, request, *args, **kwargs):
+        return self.update(request, *args, *kwargs)
+    @action(detail=True,
+            methods=['delete'])
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, *kwargs)
+    @action(detail=False,
+            methods=['post'])
+    def make(self, request, *args, **kwargs):
+        return self.create(request, *args, *kwargs)
+
+class RatingViewSet(viewsets.ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated, IsAuthor]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True,
+            methods=['put'])
+    def edit(self, request, *args, **kwargs):
+        return self.update(request, *args, *kwargs)
+    @action(detail=True,
+            methods=['delete'])
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, *kwargs)
+    @action(detail=False,
+            methods=['post'])
+    def make(self, request, *args, **kwargs):
+        return self.create(request, *args, *kwargs)
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated, IsAuthor]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True,
+            methods=['put'])
+    def edit(self, request, *args, **kwargs):
+        return self.update(request, *args, *kwargs)
+    @action(detail=True,
+            methods=['delete'])
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, *kwargs)
+    @action(detail=False,
+            methods=['post'])
+    def make(self, request, *args, **kwargs):
+        return self.create(request, *args, *kwargs)

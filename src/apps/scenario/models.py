@@ -18,7 +18,7 @@ class Scenario(models.Model):
         ('published', 'Published'),
     )
 
-    author = models.ForeignKey(User,
+    user = models.ForeignKey(User,
                                related_name='scenarios',
                                on_delete=models.CASCADE)
 
@@ -83,7 +83,7 @@ class Rating(BaseModel):
     )
     user = models.ForeignKey(User,
                                 on_delete=models.DO_NOTHING,
-                                related_name='ratings')
+                                related_name=RELATED_NAME)
 
     value = models.IntegerField(choices=RATING_CHOICES)
     
@@ -102,7 +102,7 @@ class WorldInfo(BaseModel):
 class Comment(BaseModel):
     RELATED_NAME = 'comments'
 
-    name = models.CharField(max_length=80, default='Anonymous')
-    email = models.EmailField(blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name=RELATED_NAME)
     body = models.TextField(max_length=2000)
     active = models.BooleanField(default=True)

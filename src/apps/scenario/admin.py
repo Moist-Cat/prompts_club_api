@@ -12,11 +12,11 @@ class RatingInline(admin.TabularInline):
 
 @admin.register(Scenario)
 class ScenarioAdmin(admin.ModelAdmin):    
-    list_display = ('title','slug','author','publish','status', 'tags')
-    list_filter = ('status','created','publish','author') 
+    list_display = ('title','slug','user','publish','status', 'tags')
+    list_filter = ('status','created','publish','user') 
     search_fields = ('title','body') # search bar
     prepopulated_fields = {'slug' : ('title',)}
-    raw_id_fields = ('author',)
+    raw_id_fields = ('user',)
     date_hierarchy = 'publish'
     ordering = ('status', 'publish')
     

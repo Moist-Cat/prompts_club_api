@@ -3,7 +3,7 @@ from ._base import *
 DEBUG = False
 
 ADMINS = (
-	('luis', 'moistanon@gmail.com')
+	('MoistCat', 'moistanon@gmail.com')
 )
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['moistcat.pythonanywhere.com']

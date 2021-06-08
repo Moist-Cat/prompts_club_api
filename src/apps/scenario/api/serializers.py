@@ -6,7 +6,7 @@ from taggit.models import Tag
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'name']
+        fields = ['id', 'slug', 'name']
 
 class WorldInfoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,23 +18,23 @@ class RatingSerializer(serializers.ModelSerializer):
         model = Rating
         fields = '__all__'
 
-class BaseScenarioSerializer(serializers.ModelSerializer): 
+class ScenarioSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Scenario
-        fields = ['id', 'author', 'title', 'description', 'memory',
+        fields = ['id', 'user', 'title', 'description', 'memory',
                   'authors_note', 'prompt', 'nsfw', 'publish', 'created',
                   'updated', 'status']
-
+"""
 class ScenarioSerializer(serializers.ModelSerializer):
     worldinfo_set = WorldInfoSerializer(many=True, read_only=True)
     rating_set = RatingSerializer(many=True, read_only=True)
 
     class Meta:
         model = Scenario
-        fields = ['id', 'author', 'title', 'description', 'memory',
+        fields = ['id', 'user', 'title', 'description', 'memory',
                   'authors_note', 'prompt', 'nsfw', 'publish', 'created',
                   'updated', 'status', 'worldinfo_set', 'rating_set']
-
+"""
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
