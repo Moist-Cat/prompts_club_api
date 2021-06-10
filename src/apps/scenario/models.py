@@ -55,6 +55,9 @@ class Scenario(models.Model):
            total+=rating.value
        return total/ratings.count()
     
+    class Meta:
+        ordering = ('-publish',)
+    
     def __str__(self):
         return self.title
 
@@ -70,6 +73,7 @@ class BaseModel(models.Model):
     
     class Meta:
         abstract = True
+        ordering = ('-created',)
     
     def __str__(self):
         return self.scenario.title
@@ -87,6 +91,8 @@ class Rating(BaseModel):
 
     value = models.IntegerField(choices=RATING_CHOICES)
     
+    review = models.TextField(max_length=400)
+    
     def __str__(self):
         return f'{self.user} rated {self.scenario}: {self.value}'
 
@@ -98,11 +104,3 @@ class WorldInfo(BaseModel):
 
     keys = models.CharField(max_length=200)
     entry = models.TextField(max_length=500)
-
-class Comment(BaseModel):
-    RELATED_NAME = 'comments'
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name=RELATED_NAME)
-    body = models.TextField(max_length=2000)
-    active = models.BooleanField(default=True)

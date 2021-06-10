@@ -7,19 +7,18 @@ from django.db.models.query import QuerySet
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework import generics
+from rest_framework import generics, views
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from taggit.models import Tag
 
-from ..models import Scenario, Comment, WorldInfo, \
-                     Rating
+from ..models import Scenario, WorldInfo, Rating
 from .permissions import CanReadObject, IsAuthor
-from .serializers import ScenarioSerializer, CommentSerializer, \
-                                WorldInfoSerializer, RatingSerializer, \
-                                TagSerializer
+from .serializers import ScenarioSerializer, WorldInfoSerializer, \
+                                RatingSerializer, TagSerializer, \
+                                ScenarioPreviewSerializer
 
 #permission_classes = [AllowAny]
 
@@ -34,15 +33,15 @@ class ScenarioCreateView(generics.CreateAPIView):
 
 class ScenarioPublicListView(generics.ListAPIView):
     queryset = Scenario.published.all()
-    serializer_class = ScenarioSerializer
+    serializer_class = ScenarioPreviewSerializer
     permission_classes = [AllowAny]
 
 class ScenarioPrivateListView(generics.ListAPIView):
     queryset = Scenario.objects.all()
-    serializer_class = ScenarioSerializer
+    serializer_class = ScenarioPreviewSerializer
 
     def get_queryset(self):
-        queryset = self.queryset.filter(user=self.request.user.id)
+        queryset = self.queryset.filter(user=self.request.user.pk)
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -52,7 +51,7 @@ class ScenarioDetailView(generics.RetrieveAPIView):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
     lookup_field = 'slug'
-    permission_classes = [CanReadObject, AllowAny]
+    permission_classes = [CanReadObject]
 
 class ScenarioEditView(generics.UpdateAPIView):
     queryset = Scenario.objects.all()
@@ -76,7 +75,7 @@ class ScenarioDeleteView(generics.DestroyAPIView):
 class ScenarioWIListView(generics.ListAPIView):
     queryset = Scenario.objects.all()
     serializer_class = WorldInfoSerializer
-    permission_classes = [CanReadObject, AllowAny]
+    permission_classes = [CanReadObject]
 
     def get_queryset(self):
         scenario = self.queryset.get(slug=self.kwargs['slug'])
@@ -90,7 +89,7 @@ class ScenarioWIListView(generics.ListAPIView):
 class ScenarioRatingListView(generics.ListAPIView):
     queryset = Scenario.objects.all()
     serializer_class = RatingSerializer
-    permission_classes = [CanReadObject, AllowAny] 
+    permission_classes = [CanReadObject] 
     
     def get_queryset(self):
         scenario = self.queryset.get(slug=self.kwargs['slug'])
@@ -101,31 +100,25 @@ class ScenarioRatingListView(generics.ListAPIView):
             queryset = queryset.all()
         return queryset
 
-class ScenarioCommentListView(generics.ListAPIView):
-    queryset = Scenario.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [CanReadObject, AllowAny] 
-    
-    def get_queryset(self):
-        scenario = self.queryset.get(slug=self.kwargs['slug'])
+class ScenarioAverageRatingView(views.APIView):
+    permission_classes = [CanReadObject]
+ 
+    def get(self, *args, **kwargs):
+        scenario_slug = self.kwargs['slug']
+        scenario = get_object_or_404(Scenario, slug=scenario_slug)
         self.check_object_permissions(self.request, scenario)
-        queryset = scenario.comment_set.all()
-        if isinstance(queryset, QuerySet):
-            # Ensure queryset is re-evaluated on each request.
-            queryset = queryset.all()
-        return queryset
-    
+        value = scenario.get_average_rating()
+        return Response({'average_rating': value}, status=200)
+
 class ScenarioPrivateFilteredByTag(generics.ListAPIView):
     queryset = Scenario.objects.all()
-    serializer_class = ScenarioSerializer
+    serializer_class = ScenarioPreviewSerializer
     lookup_field = 'slug'
     
     def get_queryset(self):
         tag = get_object_or_404(Tag, slug=self.kwargs['slug'])
-        print(tag)
         queryset = self.queryset.filter(tags__in=[tag],
                                         user=self.request.user)
-        print(queryset)
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -134,7 +127,7 @@ class ScenarioPrivateFilteredByTag(generics.ListAPIView):
 class ScenarioTagListView(generics.ListAPIView):
     queryset = Scenario.objects.all()
     serializer_class = TagSerializer
-    permission_classes = [CanReadObject, IsAuthenticated]
+    permission_classes = [CanReadObject]
     lookup_field = 'slug'
     
     def get_queryset(self):
@@ -148,7 +141,7 @@ class ScenarioTagListView(generics.ListAPIView):
 
 class ScenarioPublicFilteredByTag(generics.ListAPIView):
     queryset = Scenario.published.all()
-    serializer_class = ScenarioSerializer
+    serializer_class = ScenarioPreviewSerializer
     lookup_field = 'slug'
     permission_classes = [AllowAny]
     
@@ -209,7 +202,7 @@ class TagCreateView(generics.CreateAPIView):
         return Response(status=400)
 
 # --- wi views ---
-class WorldInfoViewSet(viewsets.ModelViewSet):
+class WorldInfoCreateView(generics.CreateAPIView):
     queryset = WorldInfo.objects.all()
     serializer_class = WorldInfoSerializer
     permission_classes=[IsAuthenticated, IsAuthor]
@@ -219,57 +212,29 @@ class WorldInfoViewSet(viewsets.ModelViewSet):
         self.check_object_permissions(self.request, scenario)
         serializer.save()
 
-    @action(detail=True,
-            methods=['put'])
-    def edit(self, request, *args, **kwargs):
-        return self.update(request, *args, *kwargs)
-    @action(detail=True,
-            methods=['delete'])
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, *kwargs)
-    @action(detail=False,
-            methods=['post'])
-    def make(self, request, *args, **kwargs):
-        return self.create(request, *args, *kwargs)
+class WorldInfoEditView(generics.UpdateAPIView):
+    queryset = WorldInfo.objects.all()
+    serializer_class = WorldInfoSerializer
+    permission_classes=[IsAuthenticated, IsAuthor]
 
-class RatingViewSet(viewsets.ModelViewSet):
+class WorldInfoDeleteView(generics.DestroyAPIView):
+    queryset = WorldInfo.objects.all()
+    serializer_class = WorldInfoSerializer
+    permission_classes=[IsAuthenticated, IsAuthor]
+
+class RatingCreateView(generics.CreateAPIView):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class RatingEditView(generics.UpdateAPIView):
     queryset = Rating.objects.all()
     serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated, IsAuthor]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    @action(detail=True,
-            methods=['put'])
-    def edit(self, request, *args, **kwargs):
-        return self.update(request, *args, *kwargs)
-    @action(detail=True,
-            methods=['delete'])
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, *kwargs)
-    @action(detail=False,
-            methods=['post'])
-    def make(self, request, *args, **kwargs):
-        return self.create(request, *args, *kwargs)
-
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
+class RatingDeleteView(generics.DestroyAPIView):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated, IsAuthor]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    @action(detail=True,
-            methods=['put'])
-    def edit(self, request, *args, **kwargs):
-        return self.update(request, *args, *kwargs)
-    @action(detail=True,
-            methods=['delete'])
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, *kwargs)
-    @action(detail=False,
-            methods=['post'])
-    def make(self, request, *args, **kwargs):
-        return self.create(request, *args, *kwargs)

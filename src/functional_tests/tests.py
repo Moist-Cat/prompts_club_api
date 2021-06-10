@@ -3,9 +3,9 @@ from requests import Session
 
 from django.utils.text import slugify
 
-URL = 'http://127.0.0.1:8000/api/'
+URL = 'http://127.0.0.1:8000/api/'    
 
-class TestScenarios(unittest.TestCase):
+class TestAPI(unittest.TestCase):
     # --- initialization helpers ---
     def create_user(self, credentials):
         # create dummy user
@@ -32,10 +32,16 @@ class TestScenarios(unittest.TestCase):
         return self.session.delete(f'{URL}{obj_url}/delete/')
 
     # --- other helpers ---
-    def get_id_for_related_field(self, data, name):
-        target_object = self.create_object(f'scenario/{name}', data)
+    def get_object_id(self, app, data, name):
+        target_object = self.create_object(f'{app}/{name}', data)
         pk = target_object.json()['id']
         return pk
+
+    def get_object_slug(self, app, data, name):
+        target_object = self.create_object(f'{app}/{name}', data)
+        name = target_object.json()['name']
+        slug = slugify(name)
+        return slug
 
 
     # --- initializer ---
@@ -64,11 +70,13 @@ class TestScenarios(unittest.TestCase):
                            {
                            'value': 5,
                            'scenario': self.scenario_id,
+                           'review': 'Not bad, not bad.',
                            'user': self.user_id,
                            },
                            {
                            'value': 3,
                            'scenario': self.scenario_id,
+                           'review': 'Now u',
                            'user': self.user_id,
                            }
         ]
@@ -90,6 +98,22 @@ class TestScenarios(unittest.TestCase):
                     {
                     'name': 'PW'
                     }
+        ]
+       
+        self.folder = [{
+                       'user': self.user_id,
+                       'name': 'wholesome un-birth',
+                       'description': 'W-what are you looking at, b-baka.',
+                       'status': 'private',
+                       'parent': None
+                       },
+                       {
+                       'user': self.user_id,
+                       'name': 'test folder',
+                       'description': 'I ran out of ideas.',
+                       'status': 'private',
+                       'parent': None
+                       }
        ]
 
     # --- destroya ---
@@ -102,9 +126,9 @@ class TestScenarios(unittest.TestCase):
           raise e
 
     # --- assertion helpers ---
-    def assertCreate(self, obj_url, data):
+    def assertCreate(self, app, obj, data):
         try:
-            res = self.create_object(f'scenario/{obj_url}', data)
+            res = self.create_object(f'{app}/{obj}', data)
 
             self.assertEqual(res.status_code, 201)
 
@@ -117,13 +141,13 @@ class TestScenarios(unittest.TestCase):
         except ValueError as e:
             # a.k.a: it is a list, meaning is not an scenario
             for value in data:
-                self.assertCreate(obj_url, value)
+                self.assertCreate(app, obj, value)
 
-    def assertEdit(self, obj_url, data, field):
+    def assertEdit(self, app, obj, data, field):
         try:
             data[field] = '3'
 
-            res = self.edit_object(f'scenario/{obj_url}', data=data)
+            res = self.edit_object(f'{app}/{obj}', data)
 
             self.assertEqual(res.status_code, 200)
 
@@ -132,17 +156,17 @@ class TestScenarios(unittest.TestCase):
             print(res.content)
             raise e
 
-    def assertDelete(self, obj_url):
+    def assertDelete(self, app, obj):
         try:
-            res = self.delete_object(f'scenario/{obj_url}')
+            res = self.delete_object(f'{app}/{obj}')
             self.assertEqual(res.status_code, 204)
         except AssertionError as e:
             print(res.content)
             raise e
 
-    def assertGet(self, obj_url, data):
+    def assertGet(self, app, obj, data):
         try:
-            res = self.get_object(f'scenario/{obj_url}')
+            res = self.get_object(f'{app}/{obj}')
             self.assertEqual(res.status_code, 200)
             results = res.json()['results']
             try:
@@ -160,14 +184,19 @@ class TestScenarios(unittest.TestCase):
     # --- tests --- 
     # Scenario tests
     def testEditScenario(self):
-        self.assertEdit(f'{self.title_slug}',self.test_scenario, 'title')
+        self.assertEdit('scenario',
+                       f'{self.title_slug}',self.test_scenario, 'title')
 
     def testShowsPrivateContent(self):
-        self.assertGet('mine', self.test_scenario)
+        # since we do not serialize the whole data in the
+        # list, we have to conform with knowing the title is there.
+        # (since)
+        self.assertGet('scenario', 'mine',
+                       {'title': self.test_scenario['title']})
 
     def testPrivateScenarioIsHidden(self):
         try:
-            self.assertGet('', self.test_scenario)
+            self.assertGet('scenario', '', self.test_scenario)
         except (IndexError, AssertionError):
             # meaning there is nothing there
             # or at least not the scenario
@@ -178,27 +207,27 @@ class TestScenarios(unittest.TestCase):
 
     # WI tests
     def testCreateWI(self):
-        self.assertCreate('worldinfo', self.world_info)
+        self.assertCreate('scenario', 'worldinfo', self.world_info)
 
     def testEditWI(self):
         world_info = self.world_info[0]
-        id = self.get_id_for_related_field(world_info, 'worldinfo')
+        id = self.get_object_id('scenario', world_info, 'worldinfo')
 
-        self.assertEdit(f'worldinfo/{id}', world_info, 'entry')
+        self.assertEdit('scenario', f'worldinfo/{id}', world_info, 'entry')
         
     def testDeleteWI(self):
         world_info = self.world_info[0]
-        id = self.get_id_for_related_field(world_info, 'worldinfo')
+        id = self.get_object_id('scenario', world_info, 'worldinfo')
 
-        self.assertDelete(f'worldinfo/{id}')
+        self.assertDelete('scenario', f'worldinfo/{id}')
         
     # Rating tests
     def testCreateRatings(self):
         # notice how it should fail the second time
         # since we allow only one rating per user
-        self.assertCreate(f'rating', self.ratings[0])
+        self.assertCreate('scenario', f'rating', self.ratings[0])
         try:
-            self.assertCreate(f'rating', self.ratings[1])
+            self.assertCreate('scenario', f'rating', self.ratings[1])
         except AssertionError:
             pass
         else:
@@ -207,19 +236,19 @@ class TestScenarios(unittest.TestCase):
         
     def testEditRatings(self):
         rating = self.ratings[0]
-        id = self.get_id_for_related_field(rating, 'rating')
+        id = self.get_object_id('scenario', rating, 'rating')
 
-        self.assertEdit(f'rating/{id}', rating, 'value')
+        self.assertEdit('scenario', f'rating/{id}', rating, 'value')
 
     def testDeleteRating(self):
         rating = self.ratings[0]
-        id = self.get_id_for_related_field(rating, 'rating')
+        id = self.get_object_id('scenario', rating, 'rating')
 
-        self.assertDelete(f'rating/{id}')
+        self.assertDelete('scenario', f'rating/{id}')
 
     # Tag tests
     def testCreateTag(self):
-        self.assertCreate(f'{self.title_slug}/tag', self.tag)
+        self.assertCreate('scenario', f'{self.title_slug}/tag', self.tag)
     
     def testDeleteTag(self):
         tag_data = self.tag[0]
@@ -227,14 +256,14 @@ class TestScenarios(unittest.TestCase):
         # luckily, we get the slug outright, so no 
         # need to slugify afterwards
         tag_id = tag.json()['id']
-        self.assertDelete(f'{self.title_slug}/tag/{tag_id}')
+        self.assertDelete('scenario', f'{self.title_slug}/tag/{tag_id}')
 
     def testScenarioHiddenFilterByTags(self):
         tag_data = self.tag[0]
         tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
         tag_slug = tag.json()['slug']
         try:
-            self.assertGet(f'tag/{tag_slug}', tag_data)
+            self.assertGet('scenario', f'tag/{tag_slug}', tag_data)
         except (IndexError, AssertionError):
             pass
         else:
@@ -242,19 +271,45 @@ class TestScenarios(unittest.TestCase):
 
     def testTagList(self):
         tag_data = self.tag[0]
-        tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
-        tag_slug = tag.json()['slug']
+        self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
 
-        self.assertGet(f'{self.title_slug}/tag', tag_data)
+        self.assertGet('scenario', f'{self.title_slug}/tag', tag_data)
 
     def testScenarioTags(self):
         tag_data = self.tag[0]
         tag = self.create_object(f'scenario/{self.title_slug}/tag', tag_data)
-        self.assertGet(f'{self.title_slug}/tag', tag_data)
-
-    # Folder tests
+        self.assertGet('scenario',f'{self.title_slug}/tag', tag_data)
+     
+    # folder tests
     def testCreateFolder(self):
-        pass
-    # Comment tests
+        self.assertCreate('account', 'folder', self.folder)
+
+    def testEditFolder(self):
+        folder = self.folder[0]
+        slug = self.get_object_slug('account', folder, 'folder')
+        
+        self.assertEdit('account', f'folder/{slug}', folder, 'name')
+    
+    def testDeleteFolder(self):
+        folder = self.folder[0]
+        slug = self.get_object_slug('account', folder, 'folder')
+        
+        self.assertDelete('account', f'folder/{slug}')
+
+    def testAddToFolder(self):
+        folder = self.folder[0]
+        slug = self.get_object_slug('account', folder, 'folder')
+        
+        self.session.post(f'{URL}account/folder/{slug}/add/{self.scenario_id}/',
+                             data={'contentype': 'scenario'})
+        self.assertGet('account', f'folder/{slug}/scenarios',
+                           {'title': self.test_scenario['title']})
+
+    def testShowPrivateFolder(self):
+        folder = self.folder[0]
+        self.create_object('account/folder', folder)
+
+        self.assertGet('account', 'folder/mine', folder)
+
 if __name__ == '__main__':
     unittest.main(warnings=False)

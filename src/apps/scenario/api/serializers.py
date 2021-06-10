@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from ..models import Scenario, WorldInfo, Rating, \
-                      Comment
+from ..models import Scenario, WorldInfo, Rating
 from taggit.models import Tag
 
 class TagSerializer(serializers.ModelSerializer):
@@ -18,24 +17,15 @@ class RatingSerializer(serializers.ModelSerializer):
         model = Rating
         fields = '__all__'
 
-class ScenarioSerializer(serializers.ModelSerializer): 
+class ScenarioPreviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Scenario
+        fields = ['id', 'user', 'title', 'description', 'nsfw', 'publish', 'created',
+                  'updated', 'status']
+
+class ScenarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Scenario
         fields = ['id', 'user', 'title', 'description', 'memory',
                   'authors_note', 'prompt', 'nsfw', 'publish', 'created',
                   'updated', 'status']
-"""
-class ScenarioSerializer(serializers.ModelSerializer):
-    worldinfo_set = WorldInfoSerializer(many=True, read_only=True)
-    rating_set = RatingSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Scenario
-        fields = ['id', 'user', 'title', 'description', 'memory',
-                  'authors_note', 'prompt', 'nsfw', 'publish', 'created',
-                  'updated', 'status', 'worldinfo_set', 'rating_set']
-"""
-class CommentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Comment
-        fields = '__all__'

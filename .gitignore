@@ -8,7 +8,7 @@ __pycache__/
 *.cfg
 db.*
 *.log
-secret.json
+secrets.json
 
 /site_static/
 !/site_static.gitkeep

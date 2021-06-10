@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import Scenario, Comment, \
-                    Rating, WorldInfo
+from .models import Scenario, WorldInfo, \
+                    Rating
 
 class WIInline(admin.TabularInline):
     model = WorldInfo
@@ -21,9 +21,3 @@ class ScenarioAdmin(admin.ModelAdmin):
     ordering = ('status', 'publish')
     
     inlines = [WIInline, RatingInline]
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    list_dilplay = ('name', 'email', 'post', 'created', 'active')
-    list_filter = ('active', 'created', 'updated')
-    search_fields = ('name', 'email', 'body')
