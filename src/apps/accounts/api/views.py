@@ -78,6 +78,13 @@ class UserDetailView(generics.RetrieveAPIView):
     lookup_field = 'username'
     permission_classes = [AllowAny]
 
+class UserDetailPkView(generics.RetrieveAPIView):
+    # needed to get the username when 
+    # showing scenarios in the front-end
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
 class UserDestroyView(generics.DestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserPOSTSerializer

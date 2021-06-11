@@ -35,6 +35,6 @@ urlpatterns = [
     path('<username>/content/', views.UserListContentView.as_view()),
     path('<username>/folders/', views.UserListFoldersView.as_view()),
     path('<username>/delete/', views.UserDestroyView.as_view()),
-    path('<username>/', views.UserDetailView.as_view()),
+    path('<pk>/', views.UserDetailView.as_view()),
     path('', views.UserListView.as_view()),
 ]
