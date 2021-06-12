@@ -19,16 +19,20 @@ butt_base = {'bg':'magenta', 'activebackground':'pink','borderwidth':3, 'wraplen
 lab_base = {'bg':'black', 'fg':'white', 'borderwidth':1, 'highlightthickness':False,
         'wraplength': False, 'pady': 10, 'padx':10,'font':[font, 10], 'justify':'center'}
 
+header_lab = lab_base.copy()
+header_lab.update({'fg':'indigo',
+                   'bg':'gray',
+                   'font':[font, 15]})
+
 entry_base = {'bg':'grey', 'fg':'white', 'borderwidth':1, 'highlightthickness':True,
               'font':[font, 10], 'justify':'center'}
 
 frames = {
-          'header': {'bg': 'grey', 'name':'header', 'padx':200, 'pady':0},
-          'main': {'bg': 'black', 'name':'main', 'padx':200, 'pady':1},
+          'header': {'bg': 'grey', 'name':'header', 'pady':0},
+          'main': {'bg': 'black', 'name':'main', 'pady':1},
           'scenario': {'bg': 'grey',
                       'highlightthickness':True,
-                      'name': 'scenario',
-                      'padx':200, 'pady':2}
+                      'pady':2}
 }
 
 
@@ -69,7 +73,7 @@ class App(object):
 
         self.root = tkinter.Tk()
         self.root.title('Prompts Club')
-        self.root.geometry('1200x720')
+        #self.root.geometry('1200x720')
         self.root.config(bg='black')
 
         if user_data:
@@ -280,18 +284,30 @@ class App(object):
                           self.dashboard_window(query.get(),
                                frame='main'),
                                **butt_base)
+        
+        counter = 0
         data = self.get_scenarios(query_)
-        counter = 2
         for scenario in data['results']:
             user = self.get_object(f'account/{scenario["user"]}')['username']
+            title = scenario['title']
+            description = scenario['description']
             scenario_frame = Frame(frame, **frames['scenario'])
-            scenario_frame.grid(column=0, row=frames['scenario']['pady'])
-            made_by_label = Label(scenario_frame, text=user,
-                                  **lab_base)
-            made_by_label.grid(row=counter, column=0)
-
-            counter+=1
+            scenario_frame.grid(column=0,
+                      row=frames['scenario']['pady']+counter)
+            made_by_label = Label(scenario_frame, text='Made by:',
+                                  **header_lab)
+            made_by_label.grid(row=counter, column=0, sticky='w')                  
+            user_label = Label(scenario_frame, text=user,
+                                  **header_lab)
+            user_label.grid(row=counter, column=1, sticky='e')
+            title_label = Label(scenario_frame, text=title,
+                                **header_lab)
+            title_label.grid(row=counter+1, column=0, sticky='w')
+            desc_label = Label(scenario_frame, text=description,
+                                **lab_base)
+            desc_label.grid(row=counter+2, column=0, columnspan=2)
             
+            counter+=3
         
 if __name__ == '__main__':
     app = App()

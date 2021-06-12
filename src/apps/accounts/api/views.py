@@ -46,8 +46,7 @@ class UserListContentView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.queryset.get(username=self.kwargs['username'])
-        scenarios = user.scenarios.all()
-        queryset = get_list_or_404(Scenario, status='published')
+        queryset = user.scenarios.filter(status='published')
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
