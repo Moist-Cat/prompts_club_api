@@ -12,3 +12,6 @@ secrets.json
 
 /site_static/
 !/site_static.gitkeep
+
+# app
+token.json

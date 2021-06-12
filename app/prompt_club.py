@@ -16,17 +16,20 @@ font = "Times News Roman"
 butt_base = {'bg':'magenta', 'activebackground':'pink','borderwidth':3, 'wraplength': False,
             'pady': 10, 'padx':10, 'font':[font, 10], 'justify':'center'}
 # labels
-lab_base = {'bg':'black', 'fg':'gray', 'borderwidth':1, 'highlightthickness':False,
+lab_base = {'bg':'black', 'fg':'white', 'borderwidth':1, 'highlightthickness':False,
         'wraplength': False, 'pady': 10, 'padx':10,'font':[font, 10], 'justify':'center'}
 
 entry_base = {'bg':'grey', 'fg':'white', 'borderwidth':1, 'highlightthickness':True,
               'font':[font, 10], 'justify':'center'}
 
-frame_base = {'bg': 'black', 'name':'main'}
-
-frame_header = {'bg': 'grey', 'name':'header'}
-
-frame_scenario = {'bg': 'grey', 'highlightthickness':True, 'name': 'scenario'}
+frames = {
+          'header': {'bg': 'grey', 'name':'header', 'padx':200, 'pady':0},
+          'main': {'bg': 'black', 'name':'main', 'padx':200, 'pady':1},
+          'scenario': {'bg': 'grey',
+                      'highlightthickness':True,
+                      'name': 'scenario',
+                      'padx':200, 'pady':2}
+}
 
 
 # decorators
@@ -36,24 +39,19 @@ def clean_and_set_up(param_function):
     But I think it still needs some work.
     """
     def inner_function(*args, **kwargs):
-        cls = args[0]
-        root = cls.root
-        frame = args[-1]
-        frame_name = frame.__str__().strip('.')
-        
-        try: #to destroy the frame
-            frame.destroy()
-        except AttributeError:
-            pass
-        if frame_name == 'header':
-           cls.MainFrame = Frame(root, **frame_header)
-           cls.MainFrame.pack()
-           frame = cls.MainFrame
-        else:
-            frame = Frame(root, **frame_base)
-            frame.pack()
+        try:
+            frame_name = kwargs['frame']
+            root = kwargs['parent']
+            old_frame = kwargs['old_frame']
 
-        param_function(cls, frame)
+            old_frame.destroy()
+        except KeyError:
+            pass
+        if not 'parent' in kwargs:
+            root = args[0].root
+        frame = Frame(root, frames[frame_name])
+        frame.grid(column=0, row=frames[frame_name]['pady'])
+        param_function(*args, frame)
     return inner_function
 
 class App(object):
@@ -74,47 +72,15 @@ class App(object):
         self.root.geometry('1200x720')
         self.root.config(bg='black')
 
-        self.MainFrame = Frame(self.root, **frame_header)
-        self.MainFrame.pack()
         if user_data:
             self.token = user_data['token']
             self.user = user_data['username']
 
-            self.auth_user_main_frame(self.MainFrame)
+            self.auth_user_main_frame(parent=self.root,
+                                      frame='header')
         else:
-            self.anon_user_main_frame(self.MainFrame)
-
-    # --- Main frames ---
-    # One of those must be always active on top.
-    # Serves as a quick menu.
-    @clean_and_set_up
-    def auth_user_main_frame(self, frame=None):
-        self.session.headers['Authorization'] = f'Token {self.token}'
-        main_label = Label(frame,
-                   text=f'Welcome, {self.user}.',
-                   **lab_base)
-        main_label.config(bg='dark gray')
-        main_label.grid(row=0, column=0)
-        
-        logout_button = Button(frame, command=lambda: self.logout_user(),
-                    text='Log-out', **butt_base)
-        logout_button.grid(row=0, column=1)
-        self.dashboard_window()
-
-    @clean_and_set_up
-    def anon_user_main_frame(self, frame=None):
-        main_label = Label(frame,
-                   text='Welcome, Anon. You can read anything you want, ' \
-                        'but you need an account to create content for ' \
-                        'the platform.\nIt makes my life easier, ' \
-                        'please understand.',
-                   **lab_base)
-        main_label.config(bg='dark gray')
-        main_label.grid(row=0, column=0)
-        log_in_button = Button(frame, command=lambda: self.enter_window(),
-                    text='Log-in' ,**butt_base)
-        log_in_button.grid(row=0, column=1)
-        self.init_window()
+            self.anon_user_main_frame(parent=self.root,
+                                      frame='header')
     
     # --- helper methods ---
     def check_for_errors(self, res):
@@ -156,14 +122,14 @@ class App(object):
 
         return res.json()
 
-    def create_user(self, credentials):
+    def create_user(self, old_frame, credentials):
         # create dummy user
         res = self.session.post(f'{URL}account/register/',
                                 data=credentials)
         if not self.check_for_errors(res):
-            self.login_user(credentials)
+            self.login_user(old_frame, credentials)
 
-    def login_user(self, credentials):
+    def login_user(self, old_frame, credentials):
         res =  self.session.post(f'{URL}account/login/',
                                 data=credentials)
         if not self.check_for_errors(res):
@@ -176,45 +142,93 @@ class App(object):
             showinfo('Success', f'Welcome (back?), {self.user}. '
                                  'Your daily dose of \'stuff\' awaits you.')
 
-            self.auth_user_main_frame(self.MainFrame)
+            self.auth_user_main_frame(old_frame=old_frame,
+                                      frame='header')
 
-    def logout_user(self):
+    def logout_user(self, old_frame):
         # nothing fancy
         del self.session.headers['Authorization']
         
-        self.anon_user_main_frame(self.MainFrame)
+        self.anon_user_main_frame(old_frame=old_frame,
+                                      frame='header')
 
-    # --- tkinter-based views ---
-    def show_scenarios(self, frame, query):
-       query = query.get()
-       if query.starts_with('#'):
-           # meaning we need to look for a tag
-           res = self.get_object(f'scenario/tag/{query}')
-           data = res.json()
-       elif query.starts_with('$'):
-           res = self.get_object(f'account/{query}/content/')
-       elif query:
-           # A title
-           res = 
-      
+    def get_scenarios(self, query):
+        if query.startswith('#'):
+            # meaning we need to look for a tag
+            data = self.get_object(f'scenario/tag/{query}')
+        elif query.startswith('%'):
+            data = self.get_object(f'account/{query}/content')
+        elif query:
+            # A title
+            data = self.get_object(f'scenario/{query}')
+        else:
+            data = self.get_object(f'scenario')
         
-    
+        return data
+
+    # --- tkinter-based views ---  
+
+    #    Header frames
+    #
+    # One of those must be always active on top.
+    # Serves as a quick menu.
     @clean_and_set_up
-    def init_window(self, frame=None):
+    def auth_user_main_frame(self, frame):
+        self.session.headers['Authorization'] = f'Token {self.token}'
+        main_label = Label(frame,
+                   text=f'Welcome, {self.user}.',
+                   **lab_base)
+        main_label.config(bg='dark gray')
+        main_label.grid(row=0, column=0)
+        
+        logout_button = Button(frame, command=lambda: self.logout_user(frame),
+                    text='Log-out', **butt_base)
+        logout_button.grid(row=0, column=1)
+
+        self.dashboard_window(parent=self.root,
+                              frame='main')
+
+    @clean_and_set_up
+    def anon_user_main_frame(self, frame):
+        main_label = Label(frame,
+                   text='Welcome, Anon. You can read anything you want, ' \
+                        'but you need an account to create content for ' \
+                        'the platform.\nIt makes my life easier, ' \
+                        'please understand.',
+                   **lab_base)
+        main_label.config(bg='dark gray')
+        main_label.grid(row=0, column=0)
+        log_in_button = Button(frame, command=lambda: \
+                                    self.enter_window(parent=self.root,
+                                                      frame='main'),
+                               text='Log-in' ,**butt_base)
+        log_in_button.grid(row=0, column=1)
+
+        self.init_window(parent=self.root,
+                         frame='main')
+
+    #    Main Frames
+    @clean_and_set_up
+    def init_window(self, frame):
         welcome = 'Create an account to start making scenarios ' \
                   'or browse what other people have made.'
         welcome_label = Label(frame, text=welcome, **lab_base)
         welcome_label.grid(row=0,column=0, columnspan=2, pady=100)
 
-        goto_enter = Button(frame, command=lambda: self.enter_window(frame),
+        goto_enter = Button(frame, command=lambda: self.enter_window(
+                                                        old_frame=frame,
+                                                        frame='main'),
                         text='Join', **butt_base)
         goto_enter.grid(row=1,column=0)
-        goto_browse = Button(frame, command=lambda:self.browse_window(frame),
+        goto_dashboard = Button(frame,
+                                command=lambda:self.dashboard_window(
+                                                      old_frame=frame,
+                                                      frame='main'),
                         text='Browse', **butt_base)
-        goto_browse.grid(row=1,column=1)
+        goto_dashboard.grid(row=1,column=1)
 
     @clean_and_set_up
-    def enter_window(self, frame=None):
+    def enter_window(self, frame):
         username = StringVar()
         password = StringVar()
         
@@ -232,30 +246,52 @@ class App(object):
         password_entry.grid(row=2,column=1)
 
         register_button = Button(frame, command=lambda:self.create_user(
-                                        {'username': username.get(),
-                                         'password': password.get()}),
+                                        old_frame=frame,
+                                        credentials={
+                                                'username': username.get(),
+                                                'password': password.get()
+                                        }),
                         text='Create', **butt_base)
         register_button.grid(row=3,column=0)
         register_button = Button(frame, command=lambda:self.login_user(
-                                        {'username': username.get(),
-                                         'password': password.get()}),
+                                        old_frame=frame,
+                                        credentials={
+                                                'username': username.get(),
+                                                'password': password.get()
+                                        }),
                         text='Log-in', **butt_base)
         register_button.grid(row=3,column=1)
 
     @clean_and_set_up
-    def dashboard_window(self, frame=None):
+    def dashboard_window(self, frame, query_=''):
         query = StringVar()
-        
+
+        scenario_frame = Frame(frame, **frames['scenario'])
 
         search_bar_label = Label(frame, text='Search title, insert \"#\" ' \
-                                             'to search a particular tag or' \
-                                             '\'$\' to look for a particular' \
+                                             'to search a particular tag or ' \
+                                             '\'%\' to look for a particular ' \
                                              'user\'s content.', **lab_base)
-        search_bar_label.grid(row=0,column=0)  
+        search_bar_label.grid(column=0, row=0)
         search_bar_entry = Entry(frame, textvariable = query, **entry_base)
-        search_bar_entry.grid(row=1,column=0)
+        search_bar_entry.grid(column=0, row=1)
         
-        self.show_scenarios(frame, query)
+        search_button = Button(frame, command = lambda:	\
+                          self.dashboard_window(query.get(),
+                               frame='main'),
+                               **butt_base)
+        data = self.get_scenarios(query_)
+        counter = 2
+        for scenario in data['results']:
+            user = self.get_object(f'account/{scenario["user"]}')['username']
+            scenario_frame = Frame(frame, **frames['scenario'])
+            scenario_frame.grid(column=0, row=frames['scenario']['pady'])
+            made_by_label = Label(scenario_frame, text=user,
+                                  **lab_base)
+            made_by_label.grid(row=counter, column=0)
+
+            counter+=1
+            
         
 if __name__ == '__main__':
     app = App()
