@@ -45,8 +45,10 @@ class UserListContentView(generics.ListAPIView):
     lookup_field = 'username'
 
     def get_queryset(self):
-        user = self.queryset.get(username=self.kwargs['username'])
-        queryset = user.scenarios.filter(status='published')
+        user = get_object_or_404(self.queryset,
+                                 username=self.kwargs['username'])
+        if user:
+            queryset = user.scenarios.filter(status='published')
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -54,13 +56,14 @@ class UserListContentView(generics.ListAPIView):
 
 class UserListFoldersView(generics.ListAPIView):
     queryset = User.objects.all()
-    serializer_class = ScenarioSerializer
+    serializer_class = FolderSerializer
     permission_classes = [AllowAny]
     lookup_field = 'username'
 
     def get_queryset(self):
-        user = self.queryset.get(username=self.kwargs['username'])
-        queryset = user.folders.published.all()
+        user = get_object_or_404(self.queryset,
+                             username=self.kwargs['username'])
+        queryset = user.folders.filter(status='published')
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -171,7 +174,8 @@ class FolderScenarios(generics.ListAPIView):
     lookup_field = 'slug'
     
     def get_queryset(self):
-        folder = self.queryset.get(slug=self.kwargs['slug'])
+        folder = get_object_or_404(self.queryset,
+                                   slug=self.kwargs['slug'])
         self.check_object_permissions(self.request, folder)
         queryset = folder.scenarios.all()
         if isinstance(queryset, QuerySet):

@@ -4,6 +4,7 @@ from requests import Session
 from django.utils.text import slugify
 
 URL = 'http://127.0.0.1:8000/api/'    
+#URL = 'https://moistcat.pythonanywhere.com/api/'
 
 class TestAPI(unittest.TestCase):
     # --- initialization helpers ---
@@ -11,6 +12,7 @@ class TestAPI(unittest.TestCase):
         # create dummy user
         res = self.session.post(f'{URL}account/register/',
                                 data=credentials)
+        self.user_id = res.json()['id']
         try:
             assert res.status_code == 201
         except AssertionError as e:
@@ -49,7 +51,6 @@ class TestAPI(unittest.TestCase):
         self.session = Session()
         self.user = {'username':'dummy', 'password':'toocommon123'}
         self.user_token = self.create_user(self.user)
-        self.user_id = self.get_object(f'account/{self.user["username"]}').json()['id']
         
         self.session.headers['Authorization'] = f'Token {self.user_token}'
         self.test_scenario = {

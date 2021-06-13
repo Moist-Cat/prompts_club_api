@@ -4,46 +4,53 @@ import sys
 from signal import SIGINT
 
 from core import *
-from utils import get_user_scenarios
+import views
 
 # decorators
 def set_up_cml_interface(param_function):
-    def inner_function(app):
-        user = app.user
-        if not user:
-           user = 'anon'
-        print(f'[{user}@pompts_club]$ ', end='')
-        param_function(app)
+    def inner_function(app, command=None):
+        if not command:
+            user = app.user
+            if not user:
+               user = 'anon'
+            print(f'[{user}@pompts_club]$ ', end='')
+        param_function(app, command)
     return inner_function
 
 # helpers
-def get_command_with_args():
-    try:
-        command = input()
-    except (EOFError, KeyboardInterrupt):
-        print('\nbye bye')
-        sys.exit(SIGINT.value)
+
+@set_up_cml_interface
+def command(app, command=None):
+    if not command:
+        try:
+            command = input()
+        except (EOFError, KeyboardInterrupt):
+            print('\nbye bye')
+            sys.exit(SIGINT.value)
+
+    # quick commands, we need to check those 
+    # before we split the command; since titles, 
+    # tags, etc use spaces.
+    if command.startswith('!'):
+        scenario_title = command.strip('!')
+        views.get_scenario(app, scenario_title)
+    elif command.startswith('#'):
+        tag = command.strip('#')
+        views.get_tagged_scenarios(app, tag)
+    elif command.startswith('u'):
+        username = input('\nusername: ')
+        views.get_user_scenarios(app, username)
+
     command_and_args = command.split()
     
     command = command_and_args[0]
-    
-    args = [arg for arg in command_and_args]
-    args.pop(0)
-    
-    return {
-            'command': command,
-            'args': args
-           }    
-
-@set_up_cml_interface
-def command(app):
-    command_and_args = get_command_with_args()
-
-    command = command_and_args['command']
-    args = command_and_args['args']
-    
+    try:
+        args = command_and_args[1]
+    except:
+       args = None
+  
     if command == 'register':
-        usr = input('username: ')
+        usr = input('\nusername: ')
         psw1 = getpass('password: ')
         psw2 = getpass('password(again): ')
         
@@ -58,7 +65,7 @@ def command(app):
             print('Passwords did not match.')
 
     elif command == 'login':
-        usr = input('username: ')
+        usr = input('\nusername: ')
         psw = getpass('password: ')
 
         credentials = {
@@ -71,13 +78,30 @@ def command(app):
         app.logout_user()
 
     elif command == 'get':
-        try:
-            if args[0] == 'user':
-                if args[1] == 'scenarios':
-                    user = input('username: ')
-                    get_user_scenarios(app, user)
-        except KeyError:
-            print('\nbad command')
+        if args.startswith('s'):
+            if args.endswith('t'):
+                tag = input('\ntag: ')
+                views.get_tagged_scenarios(app, tag)
+            else:
+                views.get_published_scenarios(app)
+
+        elif args.startswith('u'):
+            user = input('\nusername: ')
+            if args.endswith('s'):
+                views.get_user_scenarios(app, user)
+            elif args.endswith('f'):
+                views.get_user_folders(app, user)
+            else:
+                views.get_users(app)
+        
+        elif args.startswith('f'):
+            if args.endswith('t'):
+                tag = input('\ntag: ')
+                views.get_tagged_folders(app, tag)
+            elif args.endswith('s'):
+                pass
+            else:
+                
 
     elif command == 'clear':
         os.system('clear')
