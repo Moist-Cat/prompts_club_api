@@ -4,6 +4,7 @@ import json
 
 #(XXX) 'member to change dis to prod url afterwards, baka.
 URL = 'http://127.0.0.1:8000/api/'
+#URL = 'https://moistcat.pythonanywhere.com/api/'
 
 class App(object):
     def load_user_data(self):
@@ -84,6 +85,3 @@ class App(object):
         self.token = ''
         
         print('logged out')
-        
-        
-        return data

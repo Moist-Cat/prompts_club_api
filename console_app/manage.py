@@ -21,12 +21,8 @@ def set_up_cml_interface(param_function):
 
 @set_up_cml_interface
 def command(app, command=None):
-    if not command:
-        try:
-            command = input()
-        except (EOFError, KeyboardInterrupt):
-            print('\nbye bye')
-            sys.exit(SIGINT.value)
+    if not command: 
+        command = input()
 
     # quick commands, we need to check those 
     # before we split the command; since titles, 
@@ -101,7 +97,7 @@ def command(app, command=None):
             elif args.endswith('s'):
                 pass
             else:
-                
+                views.get_public_folders(app)
 
     elif command == 'clear':
         os.system('clear')
@@ -109,4 +105,11 @@ def command(app, command=None):
 if __name__ == '__main__':
     app = App()
     while True:
-        command(app)
+        try:
+            command(app)
+        except (EOFError, KeyboardInterrupt):
+            print('\nbye bye')
+
+            app.session.close()
+
+            sys.exit(SIGINT.value)

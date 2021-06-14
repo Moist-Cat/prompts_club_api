@@ -126,6 +126,8 @@ class TestAPI(unittest.TestCase):
           print(res.content)
           raise e
 
+      self.session.close()
+
     # --- assertion helpers ---
     def assertCreate(self, app, obj, data):
         try:
@@ -313,4 +315,4 @@ class TestAPI(unittest.TestCase):
         self.assertGet('account', 'folder/mine', folder)
 
 if __name__ == '__main__':
-    unittest.main(warnings=False)
+    unittest.main()

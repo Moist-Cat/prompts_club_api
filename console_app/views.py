@@ -68,8 +68,6 @@ def base_selection(*args, **kwargs):
     base_func = args[0]
     fun_args = kwargs['fun_args']
 
-    print(f'WHOOOOOOO {selection[0]} WHOOOOOOOOOOOO')
-
     try:
         selection[0] = int(selection[0])
     except ValueError:
