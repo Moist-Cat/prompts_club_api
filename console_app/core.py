@@ -29,13 +29,17 @@ class App(object):
         if res.status_code > 399:
             # there is an error
             message = ''
-            for key, value in res.json().items():
-                # since the response often comes as a list
-                value = ''.join(value)
-                key = key.capitalize()
-                message += f'{key}: {value}\n'
-            print('----- ERROR -----\n' \
-                      f'{message}')
+            try:
+                for key, value in res.json().items():
+                    # since the response often comes as a list
+                    value = ''.join(value)
+                    key = key.capitalize()
+                    message += f'{key}: {value}\n'
+                print('----- ERROR -----\n' \
+                          f'{message}')
+            except json.decoder.JSONDecodeError:
+                print('Hmm... it seems like there was '
+                      'something wrong with that url.')
             return True
         return False
 
@@ -57,8 +61,7 @@ class App(object):
 
     def delete_object(self, obj_url):
         res = self.session.delete(f'{URL}{obj_url}/delete/')
-        if not self.check_for_errors(res):
-            return res.json()
+        self.check_for_errors(res)
 
     def create_user(self, credentials):
         # create dummy user

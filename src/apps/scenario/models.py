@@ -23,7 +23,7 @@ class Scenario(models.Model):
                                on_delete=models.CASCADE)
 
     title = models.CharField(max_length=70, unique=True)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, db_index=True)
 
     description = models.TextField(max_length=400, blank=True)
     prompt = models.TextField(max_length=2000)
@@ -53,7 +53,10 @@ class Scenario(models.Model):
        ratings = self.rating_set.all()
        for rating in ratings:
            total+=rating.value
-       return total/ratings.count()
+       try:
+           return total/ratings.count()
+       except ZeroDivisionError:
+           return 0
     
     class Meta:
         ordering = ('-publish',)

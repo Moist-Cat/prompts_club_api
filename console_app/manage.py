@@ -5,6 +5,7 @@ from signal import SIGINT
 
 from core import *
 import views
+from help import *
 
 # decorators
 def set_up_cml_interface(param_function):
@@ -18,32 +19,32 @@ def set_up_cml_interface(param_function):
     return inner_function
 
 # helpers
-
 @set_up_cml_interface
 def command(app, command=None):
     if not command: 
         command = input()
 
-    # quick commands, we need to check those 
-    # before we split the command; since titles, 
-    # tags, etc use spaces.
+    # Need to check quick commands before the split 
+    # since some scenarios have spaces
     if command.startswith('!'):
         scenario_title = command.strip('!')
-        views.get_scenario(app, scenario_title)
+        views.view_scenario(app, scenario_title)
     elif command.startswith('#'):
         tag = command.strip('#')
-        views.get_tagged_scenarios(app, tag)
+        views.view_tagged_scenarios(app, tag)
     elif command.startswith('u'):
         username = input('\nusername: ')
-        views.get_user_scenarios(app, username)
+        views.view_user_scenarios(app, username)
+
 
     command_and_args = command.split()
     
     command = command_and_args[0]
+    
     try:
         args = command_and_args[1]
     except:
-       args = None
+        args = None
   
     if command == 'register':
         usr = input('\nusername: ')
@@ -72,35 +73,77 @@ def command(app, command=None):
    
     elif command == 'logout':
         app.logout_user()
+    
+    elif command == 'clear':
+        os.system('clear')
+    
+    # from here, all the commands need args 
+    # so we return if there are none
+    elif not args:
+        print('Command not recognized...')
+        return
+    
+    elif command == 'mine':
+         if args.startswith('s'):
+            if args.endswith('t'):
+                tag = input('\ntag:')
+                views.view_my_tagged_scenarios(app, tag)
+            else:
+                views.view_my_scenarios(app)
+
+         elif args.startswith('f'):
+            if args.endswith('t'):
+                tag = input('\ntag:')
+                views.view_my_tagged_folders(app, tag)
+            else:
+                views.view_my_folders(app)
 
     elif command == 'get':
         if args.startswith('s'):
             if args.endswith('t'):
                 tag = input('\ntag: ')
-                views.get_tagged_scenarios(app, tag)
+                views.view_tagged_scenarios(app, tag)
             else:
-                views.get_published_scenarios(app)
+                views.view_published_scenarios(app)
 
         elif args.startswith('u'):
             user = input('\nusername: ')
             if args.endswith('s'):
-                views.get_user_scenarios(app, user)
+                views.view_user_scenarios(app, user)
             elif args.endswith('f'):
-                views.get_user_folders(app, user)
+                views.view_user_folders(app, user)
             else:
-                views.get_users(app)
+                views.view_users(app)
         
         elif args.startswith('f'):
             if args.endswith('t'):
                 tag = input('\ntag: ')
-                views.get_tagged_folders(app, tag)
+                views.view_tagged_folders(app, tag)
             elif args.endswith('s'):
-                pass
+                folder_name = input('Folder name: ')
+                views.view_folder(app, folder_name)
             else:
-                views.get_public_folders(app)
+                views.view_public_folders(app)
+    
+    elif command == 'make':
+        if args.startswith('s'):
+            views.create_scenario(app)
 
-    elif command == 'clear':
-        os.system('clear')
+    elif command == 'edit':
+        if args.startswith('s'):
+            views.edit_scenario(app)
+
+    elif command == 'delete':
+        if args.startswith('s'):
+            views.delete_scenario(app)
+
+    elif command == 'help':
+        if args == 'adv':
+            print(advanced_info)
+        elif args == 'gen':
+            print(overview)
+        else:
+            print(basic_info)
 
 if __name__ == '__main__':
     app = App()

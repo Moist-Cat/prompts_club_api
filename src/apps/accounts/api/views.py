@@ -114,12 +114,13 @@ class FolderEditView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated, IsAuthor]
 
     def perform_update(self, serializer):
+        data = {'user': self.request.user}
         # check if the scenario was published to 
         # perform the according changes
         if serializer.validated_data['status'] == 'published' and \
                 self.get_object().status != 'published':
-            serializer.save(publish=timezone.now())
-        serializer.save()
+            data['publish'] = timezone.now()
+        serializer.save(data)
 
 class FolderDeleteView(generics.DestroyAPIView):
     queryset = Folder.objects.all()
@@ -143,9 +144,8 @@ class UserParentFolders(generics.ListAPIView):
     serializer_class = FolderSerializer
     
     def get_queryset(self):
-        queryset = get_list_or_404(self.queryset,
-                                   parent=None,
-                                   user=self.request.user)
+        queryset = self.queryset.filter(parents=[],
+                                        user=self.request.user)
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -199,8 +199,10 @@ class FolderAddContent(views.APIView):
             # applied globally, bacause that would not allow users to 
             # add other people stuff to their folders.
             is_author = IsAuthor()
+
             perm = is_author.has_object_permission(request, self, folder)
             perm = True
+
             if perm:
                 object_pk = self.kwargs['pk']
 
@@ -208,6 +210,7 @@ class FolderAddContent(views.APIView):
                     scenario = get_object_or_404(Scenario, pk=object_pk)
                     self.check_object_permissions(self.request, scenario)
                     folder.scenarios.add(scenario)
+
                 elif content_type == 'folder':
                     child_folder = get_object_or_404(Folder, pk=object_pk)
                     # We need to check if the user did not save a folder inside 
@@ -221,6 +224,7 @@ class FolderAddContent(views.APIView):
                                          'inside itself'
                                          },
                                         status=400)
+
                     self.check_object_permissions(self.request, child_folder)
                     
                     folder.children.add(child_folder)
@@ -237,6 +241,56 @@ class FolderAddContent(views.APIView):
                         },
                         status=400)
 
+class FolderRemoveContent(views.APIView):
+    queryset = Folder.objects.all()
+    permission_classes = [IsAuthenticated, CanReadObject]
+
+    def get_object(self):
+        parent_folder_slug = self.kwargs['slug']
+        folder = get_object_or_404(Folder, slug=parent_folder_slug)
+        # we have to access to the permission class manually 
+        # since we can not allow that the IsAuthor permission class is 
+        # applied globally, bacause that would not allow users to 
+        # add other people stuff to their folders.
+        is_author = IsAuthor()
+        perm = is_author.has_object_permission(request, self, folder)
+        
+        return folder
+  
+    def get_target_object(self, contentype):
+        object_pk = self.kwargs['pk']
+
+        if content_type == 'scenario':
+            scenario = get_object_or_404(Scenario, pk=object_pk)
+
+            self.check_object_permissions(self.request, scenario)
+
+            return scenario
+
+        elif content_type == 'folder':
+            child_folder = get_object_or_404(Folder, pk=object_pk)
+            self.check_object_permissions(self.request, child_folder)
+            
+            return child_folder
+
+    def post(self, request, *args, **kwargs):
+        if 'contentype' in request.data:
+            content_type = request.data['contentype']
+            parent_folder = self.get_object()
+            target = get_target_object()
+            
+            if contentype == 'scenario':
+                parent_folder.scenarios.remove(target)
+
+            if contentype == 'folder':
+                parent_folder.children.remove(target)
+            return Response(status=200)
+        return Response({
+                        'non_field_errors':
+                        'The contentype can not be empty'
+                        },
+                        status=400)
+
 # adding tag system to folders too...
 # ik it says "scenario", maybe I will do a base class later.
 class FolderTagCreateView(TagCreateView):
@@ -245,11 +299,13 @@ class FolderTagCreateView(TagCreateView):
 class FolderTagDeleteView(TagDeleteView):
     queryset = Folder.objects.all()
 
-class FolderPublicFilteredByTag(ScenarioPublicFilteredByTag):
-    queryset = Folder.objects.all()
-
 class FolderTagListView(ScenarioTagListView):
     queryset = Folder.objects.all()
 
+class FolderPublicFilteredByTag(ScenarioPublicFilteredByTag):
+    queryset = Folder.published.all()
+    serializer_class = FolderSerializer
+
 class FolderPrivateFilteredByTag(ScenarioPrivateFilteredByTag):
     queryset = Folder.objects.all()
+    serializer_class = FolderSerializer

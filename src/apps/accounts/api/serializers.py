@@ -10,7 +10,8 @@ class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
         fields =  ['id', 'name', 'description', 'status', \
-                  'created', 'updated', 'user', 'parent', 'scenarios']      
+                  'created', 'updated', 'user', 'parents', 'scenarios',
+                  'children']      
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

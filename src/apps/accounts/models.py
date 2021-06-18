@@ -23,7 +23,7 @@ class Folder(models.Model):
     scenarios = models.ManyToManyField(Scenario, blank=True,
                                     related_name='added_to')
 
-    slug = models.SlugField()
+    slug = models.SlugField(db_index=True)
     name = models.CharField(max_length=70)
     description = models.TextField(max_length=400, blank=True)
     status = models.CharField(max_length=10,
@@ -46,8 +46,7 @@ class Folder(models.Model):
         return self.name
 
 
-Folder.add_to_class('parent',
-                        models.ForeignKey(Folder,
-                        null=True, blank=True,
-                        related_name='children',
-                        on_delete=models.CASCADE))
+Folder.add_to_class('parents',
+                        models.ManyToManyField(Folder,
+                        blank=True,
+                        related_name='children'))

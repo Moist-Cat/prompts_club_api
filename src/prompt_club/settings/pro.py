@@ -19,7 +19,7 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_PRELOAD = True
 
 ADMINS = (
-	('MoistCat', 'moistanon@gmail.com')
+	('MoistCat', 'moistanonpy@gmail.com')
 )
 
 ALLOWED_HOSTS = ['moistcat.pythonanywhere.com']

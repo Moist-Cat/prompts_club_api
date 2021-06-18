@@ -28,8 +28,7 @@ class ScenarioCreateView(generics.CreateAPIView):
     serializer_class = ScenarioSerializer
 
     def perform_create(self, serializer):
-        user = get_object_or_404(User, username=self.request.user)
-        serializer.save(user=user)
+        serializer.save(user=self.request.user)
 
 class ScenarioPublicListView(generics.ListAPIView):
     queryset = Scenario.published.all()
@@ -61,10 +60,11 @@ class ScenarioEditView(generics.UpdateAPIView):
     def perform_update(self, serializer):
         # check if the scenario was published to 
         # perform the according changes
+        data = {'user': self.request.user}
         if serializer.validated_data['status'] == 'published' and \
                 self.get_object().status != 'published':
-            serializer.save(publish=timezone.now())
-        serializer.save()
+            data['publish'] = timezone.now()
+        serializer.save(**data)
 
 class ScenarioDeleteView(generics.DestroyAPIView):
     queryset = Scenario.objects.all()
@@ -131,7 +131,7 @@ class ScenarioTagListView(generics.ListAPIView):
     lookup_field = 'slug'
     
     def get_queryset(self):
-        scenario = self.queryset.get(slug=self.kwargs['slug'])
+        scenario = get_object_or_404(self.queryset, slug=self.kwargs['slug'])
         self.check_object_permissions(self.request, scenario)
         queryset = scenario.tags.all()
         if isinstance(queryset, QuerySet):
@@ -181,7 +181,7 @@ class TagDeleteView(generics.GenericAPIView):
         scenario = self.get_object()
         tag_id = kwargs['pk']
         tag = scenario.tags.get(pk=tag_id)
-        tag.delete()
+        scenario.tags.remove(tag)
         return Response(status=204)
 
 class TagCreateView(generics.CreateAPIView):
@@ -217,6 +217,9 @@ class WorldInfoEditView(generics.UpdateAPIView):
     serializer_class = WorldInfoSerializer
     permission_classes=[IsAuthenticated, IsAuthor]
 
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
 class WorldInfoDeleteView(generics.DestroyAPIView):
     queryset = WorldInfo.objects.all()
     serializer_class = WorldInfoSerializer
@@ -233,6 +236,9 @@ class RatingEditView(generics.UpdateAPIView):
     queryset = Rating.objects.all()
     serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated, IsAuthor]
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
 
 class RatingDeleteView(generics.DestroyAPIView):
     queryset = Rating.objects.all()

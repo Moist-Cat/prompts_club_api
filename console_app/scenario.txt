@@ -1,0 +1,30 @@
+# Title
+A fancy title
+
+# Tags
+fancy, kawaii, based, mosaicist, volatile
+
+# Description
+A Kawaii description.
+Pretty elaborated, with a lot of details.
+
+# Prompt
+A Based prompt. No idea what you want me to put here.
+
+I should have used GPT-2 to generate it, but then I didn't, that's just the way it goes sometimes, rigth?
+
+# Memory
+A Mosaicist memory.
+[ with formatfaggotery.]
+{"i hope": "this does't break anything"}
+
+
+
+# Authors Note
+A Volatile AN
+
+# Nsfw
+True
+
+# Status
+published
