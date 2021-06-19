@@ -106,14 +106,14 @@ class TestAPI(unittest.TestCase):
                        'name': 'wholesome un-birth',
                        'description': 'W-what are you looking at, b-baka.',
                        'status': 'private',
-                       'parent': None
+                       'parents': []
                        },
                        {
                        'user': self.user_id,
                        'name': 'test folder',
                        'description': 'I ran out of ideas.',
                        'status': 'private',
-                       'parent': None
+                       'parents': []
                        }
        ]
 

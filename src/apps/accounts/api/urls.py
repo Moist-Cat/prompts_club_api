@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
-from rest_framework.authtoken.views import *
+from rest_framework.authtoken.views import ObtainAuthToken
 from . import views
 
 app_name = 'accounts'

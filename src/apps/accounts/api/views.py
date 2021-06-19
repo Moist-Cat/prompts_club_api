@@ -120,7 +120,7 @@ class FolderEditView(generics.UpdateAPIView):
         if serializer.validated_data['status'] == 'published' and \
                 self.get_object().status != 'published':
             data['publish'] = timezone.now()
-        serializer.save(data)
+        serializer.save(**data)
 
 class FolderDeleteView(generics.DestroyAPIView):
     queryset = Folder.objects.all()
@@ -144,8 +144,8 @@ class UserParentFolders(generics.ListAPIView):
     serializer_class = FolderSerializer
     
     def get_queryset(self):
-        queryset = self.queryset.filter(parents=[],
-                                        user=self.request.user)
+        queryset = self.queryset.filter(user=self.request.user)
+        queryset.exclude(parents__in=queryset)
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
