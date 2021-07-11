@@ -6,23 +6,35 @@ from rest_framework import serializers
 
 from ..models import Folder
 
+
 class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
-        fields =  ['id', 'name', 'description', 'status', \
-                  'created', 'updated', 'user', 'parents', 'scenarios',
-                  'children']      
+        fields = [
+            "id",
+            "name",
+            "description",
+            "status",
+            "created",
+            "updated",
+            "user",
+            "parents",
+            "scenarios",
+            "children",
+        ]
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username']
+        fields = ["id", "username"]
+
 
 class UserPOSTSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'password']
-    
+        fields = ["id", "username", "password"]
+
     def validate(self, attrs):
-        validate_password(attrs['password'])
+        validate_password(attrs["password"])
         return super().validate(attrs)

@@ -1,2 +1,8 @@
-django_taggit
+# core
 djangorestframework
+django_taggit
+
+# needed by the doc views
+coreapi
+coreschema
+uritemplate

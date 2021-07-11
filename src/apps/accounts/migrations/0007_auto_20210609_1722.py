@@ -7,13 +7,19 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0006_auto_20210609_1702'),
+        ("accounts", "0006_auto_20210609_1702"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='folder',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='children', to='accounts.folder'),
+            model_name="folder",
+            name="parent",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="children",
+                to="accounts.folder",
+            ),
         ),
     ]

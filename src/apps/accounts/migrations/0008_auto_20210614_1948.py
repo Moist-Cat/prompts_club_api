@@ -7,20 +7,27 @@ import taggit.managers
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('taggit', '0003_taggeditem_add_unique_index'),
-        ('scenario', '0008_auto_20210609_1600'),
-        ('accounts', '0007_auto_20210609_1722'),
+        ("taggit", "0003_taggeditem_add_unique_index"),
+        ("scenario", "0008_auto_20210609_1600"),
+        ("accounts", "0007_auto_20210609_1722"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='folder',
-            name='tags',
-            field=taggit.managers.TaggableManager(help_text='A comma-separated list of tags.', through='taggit.TaggedItem', to='taggit.Tag', verbose_name='Tags'),
+            model_name="folder",
+            name="tags",
+            field=taggit.managers.TaggableManager(
+                help_text="A comma-separated list of tags.",
+                through="taggit.TaggedItem",
+                to="taggit.Tag",
+                verbose_name="Tags",
+            ),
         ),
         migrations.AlterField(
-            model_name='folder',
-            name='scenarios',
-            field=models.ManyToManyField(blank=True, related_name='added_to', to='scenario.Scenario'),
+            model_name="folder",
+            name="scenarios",
+            field=models.ManyToManyField(
+                blank=True, related_name="added_to", to="scenario.Scenario"
+            ),
         ),
     ]

@@ -2,7 +2,7 @@ from ._base import *
 
 DEBUG = False
 
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 
 SESSION_COOKIE_SECURE = True
 
@@ -18,8 +18,6 @@ CSRF_COOKIE_SECURE = True
 
 SECURE_HSTS_PRELOAD = True
 
-ADMINS = (
-	('MoistCat', 'moistanonpy@gmail.com')
-)
+ADMINS = ("MoistCat", "moistanonpy@gmail.com")
 
-ALLOWED_HOSTS = ['moistcat.pythonanywhere.com']
+ALLOWED_HOSTS = ["moistcat.pythonanywhere.com"]

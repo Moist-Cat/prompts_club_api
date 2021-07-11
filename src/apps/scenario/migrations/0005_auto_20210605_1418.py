@@ -8,12 +8,12 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('scenario', '0004_auto_20210605_0006'),
+        ("scenario", "0004_auto_20210605_0006"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='rating',
-            unique_together={('scenario', 'user')},
+            name="rating",
+            unique_together={("scenario", "user")},
         ),
     ]

@@ -155,29 +155,31 @@ def show_scenario(app, raw_scenario, only_header=True):
     title_slug = slugify(raw_scenario['title'])
     tags = get_tags(app, f'scenario/{title_slug}')
     user = raw_scenario['user']
-    username = app.get_object(f'account/{user}')['username']
+    username = app.get_object(f'account/{user}')
     average_rating = app.get_object(
-                f'scenario/{title_slug}/ratings/average')['average_rating']
+                f'scenario/{title_slug}/ratings/average')
 
-    params = [
-             username,
-             raw_scenario['title'],
-             average_rating,
-             tags,
-             raw_scenario['description'],
-             raw_scenario['nsfw'],
-             raw_scenario['created'],
-             raw_scenario['publish']
-    ]
-    if not only_header:
-        params.extend([
-             raw_scenario['memory'],
-             raw_scenario['authors_note'],
-             raw_scenario['prompt'],
-             raw_scenario['status']
-        ])
+    if user and type(average_rating) != None:
+        # cache
+        params = [
+                 username['username'],
+                 raw_scenario['title'],
+                 average_rating['average_rating'],
+                 tags,
+                 raw_scenario['description'],
+                 raw_scenario['nsfw'],
+                 raw_scenario['created'],
+                 raw_scenario['publish']
+        ]
+        if not only_header:
+            params.extend([
+                 raw_scenario['memory'],
+                 raw_scenario['authors_note'],
+                 raw_scenario['prompt'],
+                 raw_scenario['status']
+            ])
 
-    print_item(*params)
+        print_item(*params)
 
 def show_scenarios(app, raw_scenarios):
     for scenario in raw_scenarios['results']:

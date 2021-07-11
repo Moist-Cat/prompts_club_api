@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0004_auto_20210608_2221'),
+        ("accounts", "0004_auto_20210608_2221"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='folder',
-            old_name='parent',
-            new_name='folder',
+            model_name="folder",
+            old_name="parent",
+            new_name="folder",
         ),
         migrations.AlterField(
-            model_name='folder',
-            name='status',
-            field=models.CharField(choices=[('private', 'Private'), ('published', 'Published')], default='private', max_length=10),
+            model_name="folder",
+            name="status",
+            field=models.CharField(
+                choices=[("private", "Private"), ("published", "Published")],
+                default="private",
+                max_length=10,
+            ),
         ),
     ]

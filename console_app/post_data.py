@@ -100,7 +100,7 @@ def scenario_txt_with_wi_to_json():
     with open('stories.json', 'w') as file:
         json.dump(scen_data, file)
 
-class ScenarioOps(object):
+class ScenarioOps:
     def __init__(self, app):
         self.app = app
         self.GET = app.get_object
@@ -142,21 +142,34 @@ class ScenarioOps(object):
         
         return scen_data
 
+    def add_when_called(self):
+        item_number = 0
+        while True:
+            yield item_number
+            item_number += 1
+
     def get_scenario_attr_id(self, title_slug, attr_name, lookup_field):
         data = {}
-        counter = 1
+        pages = 1
+        items = self.add_when_called()
         while True:
             res = self.GET(f'scenario/{title_slug}/' \
-                           f'{attr_name}/?page={counter}')
+                           f'{attr_name}/?page={pages}')
             
             if not res:
                 break
+            
             # black magic here. We use a filed
-            # to get the id, since it (should) 
+            # to get the id, that (should) 
             # be unique for each scenario.
-            page = {item[lookup_field]: item['id'] for item in res['results']}
+            #
+            # counter added to the items since the "field" could 
+            # have been edited
+            # I need to find another way to do this...
+            page = {item[lookup_field]: (item['id'], next(items)) for item in res['results']}
+            print(page)
             data.update(page)
-            counter+=1
+            pages += 1
         return data
 
     # CRUD
@@ -202,10 +215,12 @@ class ScenarioOps(object):
         else:
             raise ScenarioDoesNotExist
 
+        counter = 0
         if scenario['worldInfo']:
             IDS = self.get_scenario_attr_id(title_slug,
                                             'worldinfo',
                                             'keys')
+            
             for wi in scenario['worldInfo']:
                 wi_data = {
                            'scenario': scen_id,
@@ -213,13 +228,14 @@ class ScenarioOps(object):
                            'entry': wi['entry']
                 }
                 try:
-                    pk = IDS[wi_data['keys']]
-                except KeyError:
-                    # I can not find any other "decent" way of 
-                    # getting the wi ids without directly inputting 
-                    # it, so there is no way to edit the keys for now.
-                    return
+                    pk = IDS[wi_data['keys'][0]]
+                    print(pk)
+                except KeyError as e:
+                    # get the id based on how many WI entries there are 
+                    # worth a shot...
+                    pk = [v[0] for k, v in IDS.items() if v[1] == counter][0]
                 self.UPDATE(f'scenario/worldinfo/{pk}', wi_data)
+                counter += 1
 
         if scenario['tags']:
             # get the old tags

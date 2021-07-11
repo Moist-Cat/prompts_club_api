@@ -22,7 +22,7 @@ sys.path = ["", EXTERNAL_LIBS_PATH, EXTERNAL_APPS_PATH] + sys.path
 """
 
 
-with open(os.path.join(os.path.dirname(__file__), 'secrets.json'), 'r') as f:
+with open(os.path.join(os.path.dirname(__file__), "secrets.json"), "r") as f:
     secrets = json.loads(f.read())
 
 
@@ -31,11 +31,12 @@ def get_secret(setting):
     try:
         return secrets[setting]
     except KeyError:
-        error_msg = f'Set the {setting} secret variable'
+        error_msg = f"Set the {setting} secret variable"
         raise ImproperlyConfigured(error_msg)
 
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_secret('DJANGO_SECRET_KEY')
+SECRET_KEY = get_secret("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -50,71 +51,67 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     # contributed
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # third-party
-    'taggit',
-    'rest_framework',
-    #(XXX) rest_framework does not
-    # provide the apps inside it
-    # so we have to include it
-    # and apply the migrations
-    'rest_framework.authtoken',
+    "taggit",
+    "rest_framework",
+    "rest_framework.authtoken",
     # local
-    'apps.scenario.apps.ScenarioConfig',
-    'apps.accounts.apps.AccountsConfig',
+    "apps.scenario.apps.ScenarioConfig",
+    "apps.accounts.apps.AccountsConfig",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
 ]
 
-ROOT_URLCONF = 'prompt_club.urls'
+ROOT_URLCONF = "prompt_club.urls"
 import django
+
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'prompt_club.wsgi.application'
+WSGI_APPLICATION = "prompt_club.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': get_secret('DATABASE_NAME'),
-        'USER': get_secret('DATABASE_USER'),
-        'PASSWORD': get_secret('DATABASE_PASSWORD'),
-        'HOST': get_secret('DATABASE_HOST')
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": get_secret("DATABASE_NAME"),
+        "USER": get_secret("DATABASE_USER"),
+        "PASSWORD": get_secret("DATABASE_PASSWORD"),
+        "HOST": get_secret("DATABASE_HOST"),
     },
-     'TEST':{
-         'ENGINE': 'django.db.backends.mysql'
-    }}
+    "TEST": {"ENGINE": "django.db.backends.mysql"},
+}
 
 
 # Password validation
@@ -122,26 +119,25 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -150,23 +146,24 @@ USE_L10N = True
 USE_TZ = True
 
 LOCALE_PATHS = [
-    os.path.join(BASE_DIR, 'locale'),
+    os.path.join(BASE_DIR, "locale"),
 ]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'site_static'),
+    os.path.join(BASE_DIR, "site_static"),
 ]
+
 
 # media
 timestamp = get_git_changeset_timestamp(BASE_DIR)
-STATIC_URL = f'/static/{timestamp}/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = f"/static/{timestamp}/"
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 EMAIL_HOST = get_secret("EMAIL_HOST")
 EMAIL_PORT = get_secret("EMAIL_PORT")
@@ -174,12 +171,25 @@ EMAIL_HOST_USER = get_secret("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = get_secret("EMAIL_HOST_PASSWORD")
 # Rest Framework
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated'
+    # Permissions
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # Authentication
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication"
     ],
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication'
+    # Throttling
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle"
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '7/s',
+        'anon': '4/s',
+    },
+    # Shemas
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+    # Pagination
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }

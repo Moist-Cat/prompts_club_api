@@ -9,27 +9,36 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('scenario', '0006_auto_20210607_1745'),
+        ("scenario", "0006_auto_20210607_1745"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='comment',
-            name='email',
+            model_name="comment",
+            name="email",
         ),
         migrations.RemoveField(
-            model_name='comment',
-            name='name',
+            model_name="comment",
+            name="name",
         ),
         migrations.AddField(
-            model_name='comment',
-            name='user',
-            field=models.ForeignKey(default='', on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='auth.user'),
+            model_name="comment",
+            name="user",
+            field=models.ForeignKey(
+                default="",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="comments",
+                to="auth.user",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='rating',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='rating', to=settings.AUTH_USER_MODEL),
+            model_name="rating",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="rating",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

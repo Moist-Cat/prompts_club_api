@@ -10,20 +10,26 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('accounts', '0001_initial'),
+        ("accounts", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('scenario', '0001_initial'),
+        ("scenario", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='folder',
-            name='scenarios',
-            field=models.ManyToManyField(blank=True, related_name='folder', to='scenario.Scenario'),
+            model_name="folder",
+            name="scenarios",
+            field=models.ManyToManyField(
+                blank=True, related_name="folder", to="scenario.Scenario"
+            ),
         ),
         migrations.AddField(
-            model_name='folder',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='folders', to=settings.AUTH_USER_MODEL),
+            model_name="folder",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="folders",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

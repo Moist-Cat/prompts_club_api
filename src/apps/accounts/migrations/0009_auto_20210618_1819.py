@@ -6,17 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0008_auto_20210614_1948'),
+        ("accounts", "0008_auto_20210614_1948"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='folder',
-            name='parent',
+            model_name="folder",
+            name="parent",
         ),
         migrations.AddField(
-            model_name='folder',
-            name='parents',
-            field=models.ManyToManyField(blank=True, related_name='children', to='accounts.Folder'),
+            model_name="folder",
+            name="parents",
+            field=models.ManyToManyField(
+                blank=True, related_name="children", to="accounts.Folder"
+            ),
         ),
     ]

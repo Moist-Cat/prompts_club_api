@@ -9,7 +9,7 @@ Do not do this.
 
 
 #Keys
-More keys, useless, muda, futile
+More keys, useless, muda
 # Entry
 Properly format your data. Do not make me work more.
 Stop it. Get some help.

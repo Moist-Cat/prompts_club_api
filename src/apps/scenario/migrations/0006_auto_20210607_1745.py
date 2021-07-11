@@ -9,38 +9,43 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('scenario', '0005_auto_20210605_1418'),
+        ("scenario", "0005_auto_20210605_1418"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='scenario',
-            name='author',
+            model_name="scenario",
+            name="author",
         ),
         migrations.AddField(
-            model_name='scenario',
-            name='user',
-            field=models.ForeignKey(default='', on_delete=django.db.models.deletion.CASCADE, related_name='scenarios', to='auth.user'),
+            model_name="scenario",
+            name="user",
+            field=models.ForeignKey(
+                default="",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="scenarios",
+                to="auth.user",
+            ),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='scenario',
-            name='authors_note',
+            model_name="scenario",
+            name="authors_note",
             field=models.CharField(blank=True, max_length=140),
         ),
         migrations.AlterField(
-            model_name='scenario',
-            name='description',
+            model_name="scenario",
+            name="description",
             field=models.TextField(blank=True, max_length=400),
         ),
         migrations.AlterField(
-            model_name='scenario',
-            name='memory',
+            model_name="scenario",
+            name="memory",
             field=models.TextField(blank=True, max_length=1000),
         ),
         migrations.AlterField(
-            model_name='scenario',
-            name='slug',
+            model_name="scenario",
+            name="slug",
             field=models.SlugField(unique=True),
         ),
     ]

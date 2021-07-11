@@ -6,25 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scenario', '0007_auto_20210608_2112'),
+        ("scenario", "0007_auto_20210608_2112"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='scenario',
-            options={'ordering': ('-publish',)},
+            name="scenario",
+            options={"ordering": ("-publish",)},
         ),
         migrations.AlterModelOptions(
-            name='worldinfo',
-            options={'ordering': ('-created',)},
+            name="worldinfo",
+            options={"ordering": ("-created",)},
         ),
         migrations.AddField(
-            model_name='rating',
-            name='review',
-            field=models.TextField(default='', max_length=400),
+            model_name="rating",
+            name="review",
+            field=models.TextField(default="", max_length=400),
             preserve_default=False,
         ),
         migrations.DeleteModel(
-            name='Comment',
+            name="Comment",
         ),
     ]

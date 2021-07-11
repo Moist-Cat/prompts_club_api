@@ -7,13 +7,17 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scenario', '0002_auto_20210604_2344'),
+        ("scenario", "0002_auto_20210604_2344"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='rating',
-            name='scenario',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='ratings', to='scenario.scenario'),
+            model_name="rating",
+            name="scenario",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="ratings",
+                to="scenario.scenario",
+            ),
         ),
     ]

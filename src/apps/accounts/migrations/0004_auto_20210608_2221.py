@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('accounts', '0003_auto_20210608_2207'),
+        ("accounts", "0003_auto_20210608_2207"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='folder',
-            name='status',
-            field=models.CharField(choices=[('draft', 'Draft'), ('published', 'Published')], default='draft', max_length=10),
+            model_name="folder",
+            name="status",
+            field=models.CharField(
+                choices=[("draft", "Draft"), ("published", "Published")],
+                default="draft",
+                max_length=10,
+            ),
         ),
         migrations.AlterField(
-            model_name='folder',
-            name='description',
+            model_name="folder",
+            name="description",
             field=models.TextField(blank=True, max_length=400),
         ),
     ]

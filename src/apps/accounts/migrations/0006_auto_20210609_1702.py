@@ -7,23 +7,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('scenario', '0008_auto_20210609_1600'),
-        ('accounts', '0005_auto_20210609_1648'),
+        ("scenario", "0008_auto_20210609_1600"),
+        ("accounts", "0005_auto_20210609_1648"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='folder',
-            name='folder',
+            model_name="folder",
+            name="folder",
         ),
         migrations.AddField(
-            model_name='folder',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='folders', to='accounts.folder'),
+            model_name="folder",
+            name="parent",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="folders",
+                to="accounts.folder",
+            ),
         ),
         migrations.AlterField(
-            model_name='folder',
-            name='scenarios',
-            field=models.ManyToManyField(related_name='added_to', to='scenario.Scenario'),
+            model_name="folder",
+            name="scenarios",
+            field=models.ManyToManyField(
+                related_name="added_to", to="scenario.Scenario"
+            ),
         ),
     ]

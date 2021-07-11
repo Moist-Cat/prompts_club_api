@@ -18,7 +18,6 @@ def get_git_changeset_timestamp(absolute_path):
         timestamp = datetime.utcfromtimestamp(int(timestamp))
     except ValueError:
         # Fallback to current timestamp
-        return datetime.now().strftime('%Y%m%d%H%M%S')
-    changeset_timestamp = timestamp.strftime('%Y%m%d%H%M%S')
+        return datetime.now().strftime("%Y%m%d%H%M%S")
+    changeset_timestamp = timestamp.strftime("%Y%m%d%H%M%S")
     return changeset_timestamp
-
