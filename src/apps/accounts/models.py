@@ -18,17 +18,31 @@ class Folder(models.Model):
         ("published", "Published"),
     )
 
-    user = models.ForeignKey(User, related_name="folders", on_delete=models.CASCADE)
-    scenarios = models.ManyToManyField(Scenario, blank=True, related_name="added_to")
+    user = models.ForeignKey(
+        User,
+        related_name="folders",
+        help_text="The creator of the folder.",
+        on_delete=models.CASCADE
+    )
+    scenarios = models.ManyToManyField(
+        Scenario,
+        blank=True,
+        help_text="Scenarios added to the folder, could be anyone\'s as long "\
+                    "as they are public or made by the folder owner.",
+        related_name="added_to")
 
     slug = models.SlugField(db_index=True, help_text="Well formatted slug, for url lookups.")
-    name = models.CharField(max_length=70)
-    description = models.TextField(max_length=400, blank=True)
+    name = models.CharField(max_length=70, help_text="Folder name.")
+    description = models.TextField(
+        max_length=400,
+        blank=True,
+        help_text="Summary of the folder contents.")
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
         default="private",
-        help_text="Wheter it can be seen by other users or not"
+        help_text="Wheter it can be seen by other users or not.",
+        db_index=True
     )
     objects = models.Manager()  # default manager
     published = PublishedManager()  # custom manager
@@ -49,5 +63,11 @@ class Folder(models.Model):
 
 
 Folder.add_to_class(
-    "parents", models.ManyToManyField(Folder, blank=True, related_name="children")
+    "parents",
+    models.ManyToManyField(
+        Folder,
+        blank=True,
+        help_text="Parent folders. Notice that a folder can have parent folders from " \
+                      "multiple users.",
+        related_name="children")
 )

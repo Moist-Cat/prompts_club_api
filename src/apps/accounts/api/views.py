@@ -33,7 +33,6 @@ class UserLoginView(ObtainAuthToken):
     throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
 class UserCreateView(generics.CreateAPIView):
-    queryset = User.objects.all()
     serializer_class = UserPOSTSerializer
     permission_classes = [AllowAny]
 
@@ -102,7 +101,6 @@ class UserDestroyView(generics.DestroyAPIView):
 
 # --- folder views ---
 class FolderCreateView(generics.CreateAPIView):
-    queryset = Folder.objects.all()
     serializer_class = FolderSerializer
 
     def perform_create(self, serializer):
@@ -284,8 +282,8 @@ class FolderRemoveContent(views.APIView):
             return child_folder
 
     def post(self, request, *args, **kwargs):
-        if "contentype" in request.data:
-            content_type = request.data["contentype"]
+        if "contenttype" in request.data:
+            content_type = request.data["contenttype"]
             parent_folder = self.get_object()
             target = get_target_object()
 
@@ -296,12 +294,9 @@ class FolderRemoveContent(views.APIView):
                 parent_folder.children.remove(target)
             return Response(status=200)
         return Response(
-            {"non_field_errors": "The contentype can not be empty"}, status=400
+            {"non_field_errors": "The content type can not be null"}, status=400
         )
 
-
-# adding tag system to folders too...
-# ik it says "scenario", maybe I will do a base class later.
 class FolderTagCreateView(TagCreateView):
     queryset = Folder.objects.all()
 

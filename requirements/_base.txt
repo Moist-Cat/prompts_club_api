@@ -6,3 +6,7 @@ django_taggit
 coreapi
 coreschema
 uritemplate
+
+# cache system
+python-memcached
+django-memcache-status

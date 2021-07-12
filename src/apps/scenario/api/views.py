@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
+#from django.core.cache import cache
 
 from rest_framework import status
 from rest_framework import generics, views
@@ -21,10 +22,8 @@ from .serializers import (
     ScenarioPreviewSerializer,
 )
 
-
 # ---scenario views---
 class ScenarioCreateView(generics.CreateAPIView):
-    queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
 
     def perform_create(self, serializer):
@@ -176,7 +175,6 @@ class ScenarioTagCreateView(TagCreateView):
 
 # --- wi views ---
 class WorldInfoCreateView(generics.CreateAPIView):
-    queryset = WorldInfo.objects.all()
     serializer_class = WorldInfoSerializer
     permission_classes = [IsAuthenticated, IsAuthor]
 
@@ -202,7 +200,6 @@ class WorldInfoDeleteView(generics.DestroyAPIView):
 
 
 class RatingCreateView(generics.CreateAPIView):
-    queryset = Rating.objects.all()
     serializer_class = RatingSerializer
 
     def perform_create(self, serializer):

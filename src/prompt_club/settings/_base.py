@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "taggit",
     "rest_framework",
     "rest_framework.authtoken",
+    "memcache_status",
     # local
     "apps.scenario.apps.ScenarioConfig",
     "apps.accounts.apps.AccountsConfig",
@@ -69,7 +70,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.cache.UpdateCacheMiddleware", # per site cache
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.cache.FetchFromCacheMiddleware", # per site cache
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -78,7 +81,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "prompt_club.urls"
-import django
 
 TEMPLATES = [
     {
@@ -110,7 +112,7 @@ DATABASES = {
         "PASSWORD": get_secret("DATABASE_PASSWORD"),
         "HOST": get_secret("DATABASE_HOST"),
     },
-    "TEST": {"ENGINE": "django.db.backends.mysql"},
+    "TEST": {"ENGINE": "django.db.backends.mysql"}
 }
 
 
@@ -169,23 +171,48 @@ EMAIL_HOST = get_secret("EMAIL_HOST")
 EMAIL_PORT = get_secret("EMAIL_PORT")
 EMAIL_HOST_USER = get_secret("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = get_secret("EMAIL_HOST_PASSWORD")
+
+# Cache
+
+CACHES = {
+	"default": {
+		"BACKEND": "django.core.cache.backends.memcached.MemcachedCache",
+		"LOCATION": get_secret("MEMCACHE_PORT")
+	}
+}
+
+# per site cache
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 60 * 15 # 15 minutes
+CACHE_MIDDLEWARE_KEY_PREFIX = 'prompts_club'
+
 # Rest Framework
 REST_FRAMEWORK = {
     # Permissions
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     # Authentication
+    #
+    # Uses both Token and session since it is easier to 
+    # use the API via browser with the first one.
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication"
     ],
     # Throttling
+    #
+    # To prevent DDoS attacks and to slow down enter-mashing shizos.
+    # Since most queries will be cached, regular users should not 
+    # feel a thing. Re-Sending the request when it gets throttled is 
+    # a detail to have in mind when doing the front-end, though.
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.AnonRateThrottle"
     ],
+    # Subject to change. Although with smart caching system it shouldn't 
+    # go much lower.
     'DEFAULT_THROTTLE_RATES': {
-        'user': '7/s',
-        'anon': '4/s',
+        'user': '10/s',
+        'anon': '7/s',
     },
     # Shemas
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
