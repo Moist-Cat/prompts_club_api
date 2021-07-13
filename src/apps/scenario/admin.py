@@ -23,5 +23,3 @@ class ScenarioAdmin(admin.ModelAdmin):
     ordering = ("status", "publish")
 
     inlines = [WIInline, RatingInline]
-
-admin.site.index_template = "memcache_status/admin_index.html"
