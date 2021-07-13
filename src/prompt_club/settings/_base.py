@@ -70,7 +70,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.cache.UpdateCacheMiddleware", # per site cache 
     "django.middleware.common.CommonMiddleware",
+    "django.middleware.cache.FetchFromCacheMiddleware", # per site cache
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -109,8 +111,7 @@ DATABASES = {
         "USER": get_secret("DATABASE_USER"),
         "PASSWORD": get_secret("DATABASE_PASSWORD"),
         "HOST": get_secret("DATABASE_HOST"),
-    },
-    "TEST": {"ENGINE": "django.db.backends.mysql"}
+    }
 }
 
 
@@ -159,7 +160,7 @@ STATICFILES_DIRS = [
 
 # media
 timestamp = get_git_changeset_timestamp(BASE_DIR)
-STATIC_URL = f"/static/{timestamp}/"
+STATIC_URL = f"/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_URL = "/media/"
